@@ -47,12 +47,11 @@ const App: React.FC = () => {
   }, [dbUnits]);
 
   useEffect(() => {
-    let mounted = true;
+    let active = true;
 
     const init = async () => {
-      // Si no hay configuración, saltamos directo a Demo
       if (!isSupabaseConfigured) {
-        if (mounted) {
+        if (active) {
           setDemoMode(true);
           setCurrentUser(MOCK_USERS[1]);
           setSession({ user: MOCK_USERS[1] });
@@ -62,13 +61,8 @@ const App: React.FC = () => {
       }
 
       try {
-        // Ponemos un timeout al fetch de sesión
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
-        
-        const { data: { session: curSession } }: any = await Promise.race([sessionPromise, timeoutPromise]);
-        
-        if (mounted) {
+        const { data: { session: curSession } } = await supabase.auth.getSession();
+        if (active) {
           setSession(curSession);
           if (curSession) {
             await fetchRemoteData(curSession.user);
@@ -77,8 +71,7 @@ const App: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error("🛡️ App: Forzando Modo Demo por fallo en red o timeout.");
-        if (mounted) {
+        if (active) {
           setDemoMode(true);
           setCurrentUser(MOCK_USERS[1]);
           setSession({ user: MOCK_USERS[1] });
@@ -88,7 +81,7 @@ const App: React.FC = () => {
     };
 
     init();
-    return () => { mounted = false; };
+    return () => { active = false; };
   }, []);
 
   const fetchRemoteData = async (user: any) => {
@@ -128,8 +121,11 @@ const App: React.FC = () => {
   };
 
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-[#020617]">
-      <div className="animate-pulse text-sky-400 font-black text-[10px] uppercase tracking-[0.5em]">Accediendo...</div>
+    <div className="flex h-screen items-center justify-center bg-[#020617] text-sky-400 font-black text-[10px] uppercase tracking-widest">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-8 h-8 border-2 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
+        Cargando Campus...
+      </div>
     </div>
   );
 
@@ -142,7 +138,7 @@ const App: React.FC = () => {
     <Layout user={currentUser} onLogout={() => { if(demoMode) window.location.reload(); else supabase.auth.signOut(); }}>
       {demoMode && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-amber-500 text-black text-[9px] font-black uppercase px-6 py-2 rounded-full border-4 border-[#020617] shadow-2xl">
-          Modo Demo
+          Entorno Demo
         </div>
       )}
 
@@ -201,7 +197,7 @@ const App: React.FC = () => {
       <div className="fixed bottom-10 right-10 no-print z-[70]">
         <button 
           onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
-          className="p-6 rounded-2xl bg-sky-500 text-white shadow-2xl border-4 border-slate-900 hover:scale-110 transition-all"
+          className="p-6 rounded-2xl bg-sky-500 text-white shadow-2xl border-4 border-slate-900 hover:scale-110 transition-all active:scale-95"
         >
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
         </button>
