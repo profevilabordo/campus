@@ -1,0 +1,260 @@
+
+import React, { useState, useEffect } from 'react';
+import { User, UserRole, Subject, Unit, ProgressRecord, Profile, Assessment } from './types';
+import { SUBJECTS, UNIT_CONTENT } from './data';
+import { supabase } from './supabase';
+import Layout from './components/Layout';
+import Auth from './components/Auth';
+import CampusHome from './pages/CampusHome';
+import SubjectPage from './pages/SubjectPage';
+import UnitPage from './pages/UnitPage';
+import TeacherDashboard from './pages/TeacherDashboard';
+import StudentDashboard from './pages/StudentDashboard';
+
+const App: React.FC = () => {
+  const [session, setSession] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const [units, setUnits] = useState<Record<string, Unit>>(UNIT_CONTENT);
+  const [progress, setProgress] = useState<ProgressRecord[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  
+  const [view, setView] = useState<'home' | 'subject' | 'unit' | 'teacher' | 'student'>('home');
+  const [activeSubject, setActiveSubject] = useState<Subject | null>(null);
+  const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Escuchar cambios en la sesión de Supabase
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchUserProfile(session.user);
+      else setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchUserProfile(session.user);
+      else {
+        setCurrentUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserProfile = async (authUser: any) => {
+    try {
+      // Intentar obtener el perfil existente
+      let { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      // Si no existe, crearlo con rol STUDENT por defecto (POLÍTICA DE ROLES)
+      if (!profile || error) {
+        const newProfile: Profile = {
+          id: authUser.id,
+          role: UserRole.STUDENT, // Siempre student por defecto en el registro
+          full_name: authUser.email.split('@')[0],
+          course_id: 'eeso206-4d' // Curso por defecto para la demo inicial
+        };
+        const { data: createdProfile, error: insertError } = await supabase
+          .from('profiles')
+          .upsert(newProfile)
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        profile = createdProfile;
+      }
+
+      setCurrentUser({
+        id: authUser.id,
+        email: authUser.email,
+        profile: profile as Profile
+      });
+
+      // Cargar datos de progreso y evaluaciones
+      fetchUserData(authUser.id);
+
+      // Redirección inicial basada en el rol literal de la base de datos
+      if (profile.role === UserRole.TEACHER) {
+        setView('teacher');
+      } else {
+        setView('home');
+      }
+
+    } catch (err) {
+      console.error("Error al gestionar el perfil del usuario:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserData = async (userId: string) => {
+    // Obtener progreso real desde Supabase
+    const { data: progressData } = await supabase
+      .from('progress')
+      .select('*')
+      .eq('user_id', userId);
+    if (progressData) setProgress(progressData);
+
+    // Obtener notas y devoluciones
+    const { data: assessmentData } = await supabase
+      .from('assessments')
+      .select('*')
+      .eq('user_id', userId);
+    if (assessmentData) setAssessments(assessmentData);
+  };
+
+  const handleUpdateProgress = async (blockId: string) => {
+    if (!currentUser || !activeUnitId) return;
+    
+    const activeUnit = units[activeUnitId];
+    const existing = progress.find(p => p.unit_id === activeUnitId && p.block_id === blockId);
+    
+    const newRecord: Partial<ProgressRecord> = {
+      user_id: currentUser.id,
+      subject_id: activeUnit.subject_id,
+      unit_id: activeUnitId,
+      block_id: blockId,
+      visited: !existing,
+      completed: !existing,
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      if (existing) {
+        await supabase.from('progress').delete().eq('id', existing.id);
+        setProgress(progress.filter(p => p.id !== existing.id));
+      } else {
+        const { data, error } = await supabase.from('progress').insert(newRecord).select().single();
+        if (data) setProgress([...progress, data]);
+      }
+    } catch (err) {
+      console.error("Error al actualizar progreso en BD:", err);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setView('home');
+    setActiveSubject(null);
+    setActiveUnitId(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Verificando Credenciales...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Auth onSession={(s) => setSession(s)} />;
+  }
+
+  const activeUnit = activeUnitId ? units[activeUnitId] : null;
+
+  const renderContent = () => {
+    // Guardia de seguridad: Solo profesores ven el dashboard docente
+    if (currentUser?.profile.role === UserRole.TEACHER && view === 'teacher') {
+      return <TeacherDashboard units={units} onUpdateUnit={(u) => setUnits(prev => ({...prev, [u.id]: u}))} />;
+    }
+
+    // Panel del alumno para ver sus notas y devoluciones
+    if (view === 'student') {
+      return (
+        <StudentDashboard 
+          user={currentUser!} 
+          progress={progress} 
+          assessments={assessments} 
+          onSelectSubject={(id) => {
+            setActiveSubject(SUBJECTS.find(s => s.id === id) || null);
+            setView('subject');
+          }} 
+        />
+      );
+    }
+
+    // Vistas comunes o de navegación de contenidos
+    switch (view) {
+      case 'home':
+        return (
+          <CampusHome 
+            onSelectSubject={(id) => {
+              setActiveSubject(SUBJECTS.find(s => s.id === id) || null);
+              setView('subject');
+            }} 
+          />
+        );
+      case 'subject':
+        return activeSubject ? (
+          <SubjectPage 
+            subject={activeSubject} 
+            userCourseId={currentUser?.profile.course_id}
+            onSelectUnit={(unitId) => {
+              setActiveUnitId(unitId);
+              setView('unit');
+            }}
+            onBack={() => setView('home')}
+          />
+        ) : null;
+      case 'unit':
+        return activeUnit ? (
+          <UnitPage 
+            unit={activeUnit} 
+            progress={progress.filter(p => p.unit_id === activeUnitId)}
+            onUpdateProgress={handleUpdateProgress}
+            onBack={() => setView('subject')}
+          />
+        ) : null;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Layout 
+      user={currentUser} 
+      onLogout={handleLogout}
+      title={view === 'unit' ? activeUnit?.title : view === 'subject' ? activeSubject?.name : undefined}
+    >
+      <div className="no-print mb-8 flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 px-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Conectado como {currentUser?.profile.role}</span>
+        </div>
+        <div className="flex gap-2">
+          {/* Botón contextual de acceso al dashboard según rol */}
+          <button 
+            onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
+            className="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase hover:bg-slate-800 transition-colors"
+          >
+            {currentUser?.profile.role === UserRole.TEACHER ? 'Dashboard Docente' : 'Mi Seguimiento'}
+          </button>
+          
+          {view !== 'home' && (
+             <button 
+              onClick={() => setView('home')}
+              className="px-4 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase hover:bg-slate-200 transition-colors"
+            >
+              Inicio Campus
+            </button>
+          )}
+        </div>
+      </div>
+
+      {renderContent()}
+    </Layout>
+  );
+};
+
+export default App;
