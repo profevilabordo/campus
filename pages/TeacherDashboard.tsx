@@ -1,18 +1,18 @@
 
 import React, { useState } from 'react';
-import { COURSES, SUBJECTS, MOCK_USERS } from '../data';
-import { UserRole, Unit, EnrollmentRequest, EnrollmentStatus } from '../types';
+import { COURSES, MOCK_USERS } from '../data';
+import { UserRole, Unit, EnrollmentRequest, EnrollmentStatus, Subject } from '../types';
 import UnitUpdatePortal from '../components/UnitUpdatePortal';
 
 interface TeacherDashboardProps {
+  subjects: Subject[];
   units: Record<string, Unit>;
   enrollRequests: EnrollmentRequest[];
   onUpdateEnrollRequest: (id: string, status: EnrollmentStatus) => void;
   onUpdateUnit: (newUnit: Unit) => void;
 }
 
-const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollRequests, onUpdateEnrollRequest, onUpdateUnit }) => {
-  // Cambiamos el default a "" (Todos los cursos) para evitar pantallas vacías
+const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ subjects, units, enrollRequests, onUpdateEnrollRequest, onUpdateUnit }) => {
   const [selectedCourse, setSelectedCourse] = useState<string | number>('');
   const [updatingUnitId, setUpdatingUnitId] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -31,7 +31,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
       {(activeUnitToUpdate || isCreatingNew) && (
         <UnitUpdatePortal 
           currentUnit={activeUnitToUpdate}
-          availableSubjects={SUBJECTS}
+          availableSubjects={subjects}
           onCancel={() => {
             setUpdatingUnitId(null);
             setIsCreatingNew(false);
@@ -113,14 +113,14 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
               <tbody className="divide-y divide-slate-50">
                 {enrollRequests.length > 0 ? enrollRequests.map(req => {
                   const student = MOCK_USERS.find(u => u.id === req.user_id);
-                  const subject = SUBJECTS.find(s => String(s.id) === String(req.subject_id));
+                  const subject = subjects.find(s => String(s.id) === String(req.subject_id));
                   return (
                     <tr key={req.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-800">{student?.profile.full_name || 'Estudiante'}</div>
                         <div className="text-[10px] text-slate-400">{student?.email}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-600">{subject?.name}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-600">{subject?.name || req.subject_id}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-tighter rounded border ${
                           req.status === EnrollmentStatus.PENDING ? 'bg-amber-50 text-amber-600 border-amber-100' :
@@ -150,7 +150,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
       {/* VISTA: CONTENIDOS (Carga de JSON) */}
       {activeTab === 'progress' && (
         <div className="space-y-12">
-          {SUBJECTS.filter(s => !selectedCourse || s.courses?.includes(String(selectedCourse))).map(subject => (
+          {subjects.filter(s => !selectedCourse || s.courses?.includes(String(selectedCourse))).map(subject => (
             <section key={subject.id} className="space-y-4">
               <div className="flex items-center justify-between px-2">
                 <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">{subject.name}</h3>
@@ -189,6 +189,11 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
               </div>
             </section>
           ))}
+          {subjects.length === 0 && (
+            <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+               <p className="text-slate-400 italic">No se encontraron asignaturas. Cargá una unidad mediante "Carga Libre".</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -203,8 +208,8 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Estudiante</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Curso</th>
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Avance Estimado</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Último Visto</th>
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Perfil</th>
                 </tr>
               </thead>
@@ -216,18 +221,20 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
                       <div className="text-[10px] text-slate-400">{student.email}</div>
                     </td>
                     <td className="px-6 py-4">
+                       <span className="text-[10px] font-bold text-slate-500 uppercase">{student.profile.course_id}</span>
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex-1 bg-slate-100 h-1 rounded-full overflow-hidden max-w-[80px]"><div className="bg-slate-900 h-full w-[10%]"></div></div>
                         <span className="text-[10px] font-bold text-slate-600">10%</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-xs text-slate-500 italic">Hace 2 horas</td>
                     <td className="px-6 py-4 text-right">
                       <button className="text-[10px] font-bold text-slate-900 hover:underline uppercase tracking-widest">Ver Seguimiento</button>
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">No hay estudiantes en este curso.</td></tr>
+                  <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">No hay estudiantes registrados en este curso.</td></tr>
                 )}
               </tbody>
             </table>
