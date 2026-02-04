@@ -19,29 +19,25 @@ export interface Profile {
   created_at?: string;
 }
 
-// Added User interface to be used in Layout, App and Auth components
 export interface User {
   id: string;
   email: string;
   profile: Profile;
 }
 
-// Added School interface for data.ts mocks
 export interface School {
   id: string;
   name: string;
   level: string;
 }
 
-// Added EnrollmentRequest interface for CampusHome and TeacherDashboard
 export interface EnrollmentRequest {
   id: string;
-  student_id: string;
+  user_id: string; // Cambiado de student_id a user_id
   subject_id: string;
   status: EnrollmentStatus;
 }
 
-// Added Assessment interface for StudentDashboard
 export interface Assessment {
   id: string;
   student_id: string;
@@ -52,12 +48,11 @@ export interface Assessment {
   date: string;
 }
 
-// Updated Course interface to match properties used in data.ts and TeacherDashboard
 export interface Course {
   id: string | number;
   school_id: string | number;
   grade_level?: string;
-  grade_level_id?: string; // Support for different mock/DB property names
+  grade_level_id?: string; 
   division: string;
   orientation?: string;
   name?: string;
@@ -65,7 +60,6 @@ export interface Course {
   is_active?: boolean;
 }
 
-// Updated Subject interface with missing properties like units_count, courses, and orientation_notes
 export interface Subject {
   id: string | number;
   name: string;
@@ -74,7 +68,6 @@ export interface Subject {
   orientation_notes?: Record<string, string>;
 }
 
-// Added Unit interface (Main UI model for pedagogical content)
 export interface Unit {
   id: string;
   subject_id: string;
@@ -92,9 +85,8 @@ export interface Unit {
   blocks: BlockContent[];
 }
 
-// Added BlockContent interface used by Unit and BlockCard components
 export interface BlockContent {
-  id: string; // maps to block_key or UI ID
+  id: string; 
   type: BlockType;
   title: string;
   content: string;
@@ -107,7 +99,6 @@ export interface BlockContent {
   }[];
 }
 
-// Table 'units' structure in Supabase
 export interface DBUnit {
   id: string;
   subject_id: number;
@@ -116,7 +107,6 @@ export interface DBUnit {
   content_json: UnitPedagogicalContent;
 }
 
-// Estructura interna del JSON Pedagógico
 export interface UnitPedagogicalContent {
   description: string;
   pdfBaseUrl: string;
@@ -128,7 +118,6 @@ export interface UnitPedagogicalContent {
   };
 }
 
-// Defined BlockPedagogicalContent as an alias for consistency
 export type BlockPedagogicalContent = BlockContent;
 
 export enum BlockType {
@@ -146,14 +135,13 @@ export enum BlockType {
   CIERRE = 'CIERRE'
 }
 
-// Updated ProgressRecord to include UI-specific properties and subject_id for dashboard logic
 export interface ProgressRecord {
   id: number;
   course_id: number;
-  block_id: any; // ID can be numeric (DB) or string (Block Key)
+  block_id: any; 
   user_id: string;
   status: string;
   completed_at: string;
-  visited?: boolean; // UI state for UnitPage
-  subject_id?: string | number; // Grouping key for StudentDashboard
+  visited?: boolean; 
+  subject_id?: string | number; 
 }
