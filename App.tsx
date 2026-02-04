@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, UserRole, Subject, DBUnit, ProgressRecord, Course, Unit } from './types';
+import { User, UserRole, Subject, DBUnit, ProgressRecord, Course, Unit, EnrollmentRequest, EnrollmentStatus } from './types';
 import { supabase } from './supabase';
-import { UNIT_CONTENT } from './data';
+import { UNIT_CONTENT, SUBJECTS } from './data';
 import Layout from './components/Layout';
 import Auth from './components/Auth';
 import CampusHome from './pages/CampusHome';
@@ -19,24 +19,28 @@ const App: React.FC = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [dbUnits, setDbUnits] = useState<DBUnit[]>([]);
   const [userProgress, setUserProgress] = useState<ProgressRecord[]>([]);
+  const [enrollRequests, setEnrollRequests] = useState<EnrollmentRequest[]>([]);
   
   const [view, setView] = useState<'home' | 'subject' | 'unit' | 'teacher' | 'student'>('home');
-  const [activeSubjectId, setActiveSubjectId] = useState<number | null>(null);
+  const [activeSubjectId, setActiveSubjectId] = useState<string | number | null>(null);
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
 
   // Mapear unidades de DB a objeto Record para compatibilidad
   const unitsMap: Record<string, Unit> = {};
-  [...Object.values(UNIT_CONTENT), ...dbUnits.map(u => ({
-    id: u.id,
-    subject_id: String(u.subject_id),
-    number: u.unit_number,
-    title: u.title,
-    description: u.content_json.description,
-    blocks: u.content_json.blocks,
-    metadata: u.content_json.metadata,
-    pdfBaseUrl: u.content_json.pdfBaseUrl,
-    pdfPrintUrl: u.content_json.pdfPrintUrl
-  }))].forEach(u => unitsMap[u.id] = u);
+  Object.values(UNIT_CONTENT).forEach(u => unitsMap[u.id] = u);
+  dbUnits.forEach(u => {
+    unitsMap[u.id] = {
+      id: u.id,
+      subject_id: String(u.subject_id),
+      number: u.unit_number,
+      title: u.title,
+      description: u.content_json.description,
+      blocks: u.content_json.blocks,
+      metadata: u.content_json.metadata,
+      pdfBaseUrl: u.content_json.pdfBaseUrl,
+      pdfPrintUrl: u.content_json.pdfPrintUrl
+    };
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -55,8 +59,20 @@ const App: React.FC = () => {
       const { data: subs } = await supabase.from('subjects').select('*');
       const { data: units } = await supabase.from('units').select('*').order('unit_number', { ascending: true });
       
-      setSubjects(subs || []);
+      const allSubjects = [...SUBJECTS];
+      if (subs) {
+        subs.forEach(s => {
+          const index = allSubjects.findIndex(as => String(as.id) === String(s.id));
+          if (index !== -1) allSubjects[index] = { ...allSubjects[index], ...s };
+          else allSubjects.push(s);
+        });
+      }
+      setSubjects(allSubjects);
       setDbUnits(units || []);
+
+      // Cargar solicitudes de inscripción (Enrollments)
+      const { data: enrolls } = await supabase.from('enrollments').select('*');
+      if (enrolls) setEnrollRequests(enrolls as any[]);
 
       const { data: prog } = await supabase.from('progress').select('*').eq('user_id', user.id);
       setUserProgress(prog || []);
@@ -68,11 +84,49 @@ const App: React.FC = () => {
     }
   };
 
+  const handleEnroll = async (subjectId: string) => {
+    if (!currentUser) return;
+    try {
+      const newRequest = {
+        student_id: currentUser.id,
+        subject_id: subjectId,
+        status: EnrollmentStatus.PENDING
+      };
+      
+      const { data, error } = await supabase.from('enrollments').insert(newRequest).select().single();
+      if (error) throw error;
+      
+      if (data) setEnrollRequests([...enrollRequests, data as any]);
+    } catch (err: any) {
+      alert("Error al solicitar inscripción: " + err.message);
+    }
+  };
+
+  const handleCancelEnroll = async (requestId: string) => {
+    try {
+      const { error } = await supabase.from('enrollments').delete().eq('id', requestId);
+      if (error) throw error;
+      setEnrollRequests(enrollRequests.filter(r => r.id !== requestId));
+    } catch (err: any) {
+      alert("Error al cancelar: " + err.message);
+    }
+  };
+
+  const handleUpdateEnrollStatus = async (id: string, status: EnrollmentStatus) => {
+    try {
+      const { error } = await supabase.from('enrollments').update({ status }).eq('id', id);
+      if (error) throw error;
+      setEnrollRequests(enrollRequests.map(r => r.id === id ? { ...r, status } : r));
+    } catch (err: any) {
+      alert("Error al actualizar estado: " + err.message);
+    }
+  };
+
   const handleUpdateUnit = async (newUnit: Unit) => {
     try {
       const dbPayload = {
         id: newUnit.id,
-        subject_id: parseInt(newUnit.subject_id),
+        subject_id: isNaN(Number(newUnit.subject_id)) ? 0 : Number(newUnit.subject_id),
         unit_number: newUnit.number,
         title: newUnit.title,
         content_json: {
@@ -83,17 +137,13 @@ const App: React.FC = () => {
           pdfPrintUrl: newUnit.pdfPrintUrl
         }
       };
-
       const { error } = await supabase.from('units').upsert(dbPayload);
-      
       if (error) throw error;
-
-      // Refrescar datos locales
       const { data: units } = await supabase.from('units').select('*').order('unit_number', { ascending: true });
       setDbUnits(units || []);
-      alert("Unidad guardada correctamente en la nube.");
+      alert("Unidad guardada.");
     } catch (err: any) {
-      alert("Error al guardar unidad: " + err.message);
+      alert("Error: " + err.message);
     }
   };
 
@@ -101,7 +151,6 @@ const App: React.FC = () => {
     if (!currentUser) return;
     const { data: blockMeta } = await supabase.from('blocks').select('id, course_id').eq('block_key', blockKey).single();
     if (!blockMeta) return;
-
     const existing = userProgress.find(p => p.block_id === blockMeta.id);
     if (existing) {
       await supabase.from('progress').delete().eq('id', existing.id);
@@ -121,22 +170,31 @@ const App: React.FC = () => {
   if (loading) return <div className="flex h-screen items-center justify-center">Cargando Ecosistema...</div>;
   if (!session) return <Auth onSession={(s) => { setSession(s); fetchAllData(s.user); }} />;
 
+  // Determinar si el usuario tiene acceso a la materia activa
+  const currentEnrollStatus = enrollRequests.find(r => 
+    String(r.subject_id) === String(activeSubjectId) && 
+    r.student_id === currentUser?.id
+  )?.status || EnrollmentStatus.NONE;
+
+  const isApproved = currentUser?.profile.role === UserRole.TEACHER || currentEnrollStatus === EnrollmentStatus.APPROVED;
+
   return (
     <Layout user={currentUser} onLogout={() => supabase.auth.signOut()}>
       {view === 'home' && (
         <CampusHome 
           userRole={currentUser?.profile.role}
-          enrollRequests={[]}
-          onSelectSubject={(id) => { setActiveSubjectId(Number(id)); setView('subject'); }}
-          onEnroll={() => {}}
-          onCancelEnroll={() => {}}
+          enrollRequests={enrollRequests.filter(r => r.student_id === currentUser?.id)}
+          onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }}
+          onEnroll={handleEnroll}
+          onCancelEnroll={handleCancelEnroll}
         />
       )}
 
       {view === 'subject' && activeSubjectId && (
         <SubjectPage 
-          subject={subjects.find(s => s.id === activeSubjectId)!}
-          isApproved={true} 
+          subject={subjects.find(s => String(s.id) === String(activeSubjectId))!}
+          isApproved={isApproved}
+          userCourseId={currentUser?.profile.course_id}
           onSelectUnit={(id) => { setActiveUnitId(id); setView('unit'); }}
           onBack={() => setView('home')}
         />
@@ -163,8 +221,8 @@ const App: React.FC = () => {
       {view === 'teacher' && (
         <TeacherDashboard 
           units={unitsMap} 
-          enrollRequests={[]} 
-          onUpdateEnrollRequest={() => {}} 
+          enrollRequests={enrollRequests} 
+          onUpdateEnrollRequest={handleUpdateEnrollStatus} 
           onUpdateUnit={handleUpdateUnit}
         />
       )}
@@ -174,7 +232,7 @@ const App: React.FC = () => {
           user={currentUser} 
           progress={userProgress} 
           assessments={[]} 
-          onSelectSubject={(id) => { setActiveSubjectId(Number(id)); setView('subject'); }}
+          onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }}
         />
       )}
 
