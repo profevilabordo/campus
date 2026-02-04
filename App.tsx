@@ -85,21 +85,25 @@ const App: React.FC = () => {
   const handleEnroll = async (subjectId: string) => {
     if (!currentUser) return;
     try {
-      // Inserción limpia usando user_id
+      // Intentamos insertar. Si falla por permisos, el error se captura.
       const { error } = await supabase.from('enrollments').insert({
         user_id: currentUser.id,
         subject_id: subjectId,
         status: EnrollmentStatus.PENDING
       });
       
-      if (error) throw error;
+      if (error) {
+        // Manejo específico si la columna user_id fallara (aunque es la correcta)
+        console.error("Error en DB:", error);
+        throw error;
+      }
       
-      // Forzar recarga inmediata de inscripciones
+      // Actualizamos estado local inmediatamente
       const { data: enrolls } = await supabase.from('enrollments').select('*');
       setEnrollRequests(enrolls || []);
-      alert("Inscripción solicitada. Esperá la aprobación del docente.");
+      alert("Solicitud de inscripción enviada con éxito.");
     } catch (err: any) {
-      alert("Error crítico: " + err.message);
+      alert("No se pudo enviar la solicitud: " + err.message);
     }
   };
 
@@ -118,7 +122,7 @@ const App: React.FC = () => {
       if (error) throw error;
       setEnrollRequests(enrollRequests.map(r => r.id === id ? { ...r, status } : r));
     } catch (err: any) {
-      alert("Error: " + err.message);
+      alert("Error actualizando admisión: " + err.message);
     }
   };
 
@@ -141,18 +145,23 @@ const App: React.FC = () => {
       if (error) throw error;
       const { data: units } = await supabase.from('units').select('*').order('unit_number', { ascending: true });
       setDbUnits(units || []);
-      alert("Contenido actualizado en el Cuaderno.");
+      alert("Cuaderno actualizado satisfactoriamente.");
     } catch (err: any) {
-      alert("Error: " + err.message);
+      alert("Error al guardar JSON: " + err.message);
     }
   };
 
   const handleToggleBlockProgress = async (blockKey: string) => {
-    if (!currentUser) return;
-    // Lógica de marcado de progreso
+    // Lógica de marcado de bloques
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center bg-[#050505] text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Cargando Cuaderno Vivo...</div>;
+  if (loading) return (
+    <div className="flex flex-col h-screen items-center justify-center bg-[#0f172a] text-slate-100 gap-4">
+      <div className="w-12 h-12 border-4 border-slate-700 border-t-white rounded-full animate-spin"></div>
+      <p className="font-black uppercase tracking-[0.3em] text-[10px]">Iniciando Laboratorio...</p>
+    </div>
+  );
+
   if (!session) return <Auth onSession={(s) => { setSession(s); fetchAllData(s.user); }} />;
 
   const currentEnrollStatus = enrollRequests.find(r => 
@@ -212,16 +221,15 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Botón Flotante de Acceso Rápido */}
-      <div className="fixed bottom-8 right-8 no-print z-[60]">
+      <div className="fixed bottom-10 right-10 no-print z-[70]">
         <button 
           onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
-          className="bg-white text-black p-5 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:scale-110 active:scale-95 transition-all border-4 border-black group"
+          className="bg-sky-500 text-white p-5 rounded-full shadow-[0_0_40px_rgba(56,189,248,0.3)] hover:scale-110 active:scale-95 transition-all border-4 border-[#0f172a] group"
         >
           {currentUser?.profile.role === UserRole.TEACHER ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
           ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
           )}
         </button>
       </div>
