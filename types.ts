@@ -4,11 +4,32 @@ export enum UserRole {
   STUDENT = 'student'
 }
 
+export enum EnrollmentStatus {
+  NONE = 'NONE',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  DENIED = 'DENIED'
+}
+
+export interface EnrollmentRequest {
+  id: string;
+  student_id: string;
+  subject_id: string;
+  status: EnrollmentStatus;
+  created_at: string;
+  decided_at?: string;
+  decided_by?: string;
+  note?: string;
+  // Join con perfil para el docente
+  student_name?: string;
+  student_email?: string;
+}
+
 export interface Profile {
   id: string;
   role: UserRole;
   full_name: string;
-  course_id?: string; // Solo para alumnos
+  course_id?: string;
   avatar_url?: string;
 }
 
@@ -100,15 +121,6 @@ export interface ProgressRecord {
   visited: boolean;
   completed: boolean;
   timestamp: string;
-}
-
-export interface QuizAttempt {
-  id: string;
-  user_id: string;
-  unit_id: string;
-  score: number;
-  attempts: number;
-  date: string;
 }
 
 export interface Assessment {
