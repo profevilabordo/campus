@@ -77,8 +77,9 @@ const App: React.FC = () => {
 
       fetchUserData(authUser.id, profile.role);
 
+      // Si es docente, no forzamos la vista de dashboard para que pueda navegar las materias desde el home
       if (profile.role === UserRole.TEACHER) {
-        setView('teacher');
+        setView('home');
       } else {
         setView('home');
       }
@@ -110,6 +111,9 @@ const App: React.FC = () => {
   const handleEnrollRequest = async (subjectId: string) => {
     if (!currentUser) return;
     
+    // Evitar solicitudes duplicadas locales
+    if (enrollRequests.some(r => r.subject_id === subjectId && r.student_id === currentUser.id)) return;
+
     const newRequest: Partial<EnrollmentRequest> = {
       student_id: currentUser.id,
       subject_id: subjectId,
@@ -117,13 +121,26 @@ const App: React.FC = () => {
       created_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase.from('enroll_requests').insert(newRequest).select().single();
-    if (data) setEnrollRequests([...enrollRequests, data]);
+    try {
+      const { data, error } = await supabase.from('enroll_requests').insert(newRequest).select().single();
+      if (error) throw error;
+      if (data) {
+        setEnrollRequests(prev => [...prev, data]);
+      }
+    } catch (err) {
+      console.error("Error al solicitar inscripción:", err);
+      alert("No se pudo procesar la solicitud. Por favor intenta de nuevo.");
+    }
   };
 
   const handleCancelEnrollRequest = async (requestId: string) => {
-    await supabase.from('enroll_requests').delete().eq('id', requestId);
-    setEnrollRequests(enrollRequests.filter(r => r.id !== requestId));
+    try {
+      const { error } = await supabase.from('enroll_requests').delete().eq('id', requestId);
+      if (error) throw error;
+      setEnrollRequests(prev => prev.filter(r => r.id !== requestId));
+    } catch (err) {
+      console.error("Error al cancelar solicitud:", err);
+    }
   };
 
   const handleUpdateEnrollRequest = async (requestId: string, status: EnrollmentStatus) => {
@@ -143,10 +160,8 @@ const App: React.FC = () => {
     if (data) {
       setEnrollRequests(enrollRequests.map(r => r.id === requestId ? data : r));
       
-      // EMAIL TRIGGER SIMULATION
       if (status === EnrollmentStatus.DENIED) {
         try {
-          // Invoicamos Supabase Edge Function
           await supabase.functions.invoke('notify-denial', {
             body: { requestId, studentId: data.student_id, subjectId: data.subject_id }
           });
@@ -240,6 +255,7 @@ const App: React.FC = () => {
       case 'home':
         return (
           <CampusHome 
+            userRole={currentUser?.profile.role}
             enrollRequests={enrollRequests}
             onSelectSubject={(id) => {
               setActiveSubject(SUBJECTS.find(s => s.id === id) || null);
@@ -251,7 +267,7 @@ const App: React.FC = () => {
         );
       case 'subject':
         const subjectRequest = enrollRequests.find(r => r.subject_id === activeSubject?.id);
-        const isApproved = subjectRequest?.status === EnrollmentStatus.APPROVED;
+        const isApproved = (subjectRequest?.status === EnrollmentStatus.APPROVED) || (currentUser?.profile.role === UserRole.TEACHER);
         
         return activeSubject ? (
           <SubjectPage 
