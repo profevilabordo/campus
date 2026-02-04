@@ -15,24 +15,26 @@ const KEY = getEnv('SUPABASE_ANON_KEY');
 
 export const isSupabaseConfigured = URL.length > 10 && KEY.length > 10;
 
-// Mock simple para evitar errores de métodos indefinidos
-const mock = {
+const mockClient = {
   auth: {
     getSession: () => Promise.resolve({ data: { session: null }, error: null }),
     onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    signInWithPassword: () => Promise.resolve({ data: {}, error: null }),
+    signInWithPassword: () => Promise.resolve({ data: {}, error: new Error("Modo Demo Activo") }),
     signOut: () => Promise.resolve()
   },
-  from: () => ({
-    select: () => ({ 
-      eq: () => ({ single: () => Promise.resolve({ data: null }), order: () => Promise.resolve({ data: [] }) }),
-      order: () => Promise.resolve({ data: [] })
+  from: (table: string) => ({
+    select: () => ({
+      eq: () => ({ 
+        single: () => Promise.resolve({ data: null, error: null }),
+        order: () => Promise.resolve({ data: [], error: null }) 
+      }),
+      order: () => Promise.resolve({ data: [], error: null })
     }),
     insert: () => Promise.resolve({ error: null }),
     upsert: () => Promise.resolve({ error: null }),
-    delete: () => ({ eq: () => Promise.resolve({ error: null }) }),
-    update: () => ({ eq: () => Promise.resolve({ error: null }) })
+    update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+    delete: () => ({ eq: () => Promise.resolve({ error: null }) })
   })
 };
 
-export const supabase = isSupabaseConfigured ? createClient(URL, KEY) : (mock as any);
+export const supabase = isSupabaseConfigured ? createClient(URL, KEY) : (mockClient as any);
