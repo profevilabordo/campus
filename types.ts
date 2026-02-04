@@ -5,61 +5,131 @@ export enum UserRole {
 }
 
 export enum EnrollmentStatus {
-  NONE = 'NONE',
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  DENIED = 'DENIED'
-}
-
-export interface EnrollmentRequest {
-  id: string;
-  student_id: string;
-  subject_id: string;
-  status: EnrollmentStatus;
-  created_at: string;
-  decided_at?: string;
-  decided_by?: string;
-  note?: string;
-  // Join con perfil para el docente
-  student_name?: string;
-  student_email?: string;
+  NONE = 'none',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  DENIED = 'denied'
 }
 
 export interface Profile {
-  id: string;
-  role: UserRole;
+  id: string; // uuid de auth.users
   full_name: string;
+  role: UserRole;
   course_id?: string;
-  avatar_url?: string;
+  created_at?: string;
 }
 
+// Added User interface to be used in Layout, App and Auth components
 export interface User {
   id: string;
   email: string;
   profile: Profile;
 }
 
+// Added School interface for data.ts mocks
 export interface School {
   id: string;
   name: string;
   level: string;
 }
 
-export interface Course {
+// Added EnrollmentRequest interface for CampusHome and TeacherDashboard
+export interface EnrollmentRequest {
   id: string;
-  school_id: string;
-  grade_level: string;
-  division: string;
-  orientation?: string;
+  student_id: string;
+  subject_id: string;
+  status: EnrollmentStatus;
 }
 
-export interface Subject {
+// Added Assessment interface for StudentDashboard
+export interface Assessment {
   id: string;
+  student_id: string;
+  subject_id: string | number;
+  type: string;
+  grade: string;
+  feedback: string;
+  date: string;
+}
+
+// Updated Course interface to match properties used in data.ts and TeacherDashboard
+export interface Course {
+  id: string | number;
+  school_id: string | number;
+  grade_level?: string;
+  grade_level_id?: string; // Support for different mock/DB property names
+  division: string;
+  orientation?: string;
+  name?: string;
+  year_label?: string;
+  is_active?: boolean;
+}
+
+// Updated Subject interface with missing properties like units_count, courses, and orientation_notes
+export interface Subject {
+  id: string | number;
   name: string;
-  units_count: number;
-  courses: string[];
+  units_count?: number;
+  courses?: string[];
   orientation_notes?: Record<string, string>;
 }
+
+// Added Unit interface (Main UI model for pedagogical content)
+export interface Unit {
+  id: string;
+  subject_id: string;
+  number: number;
+  title: string;
+  description: string;
+  isAvailable?: boolean;
+  pdfBaseUrl?: string;
+  pdfPrintUrl?: string;
+  metadata: {
+    version: string;
+    updated_at: string;
+    change_note?: string;
+  };
+  blocks: BlockContent[];
+}
+
+// Added BlockContent interface used by Unit and BlockCard components
+export interface BlockContent {
+  id: string; // maps to block_key or UI ID
+  type: BlockType;
+  title: string;
+  content: string;
+  counts_for_progress: boolean;
+  questions?: {
+    id: string;
+    question: string;
+    options: string[];
+    correctAnswer: number;
+  }[];
+}
+
+// Table 'units' structure in Supabase
+export interface DBUnit {
+  id: string;
+  subject_id: number;
+  unit_number: number;
+  title: string;
+  content_json: UnitPedagogicalContent;
+}
+
+// Estructura interna del JSON Pedagógico
+export interface UnitPedagogicalContent {
+  description: string;
+  pdfBaseUrl: string;
+  pdfPrintUrl: string;
+  blocks: BlockPedagogicalContent[];
+  metadata: {
+    version: string;
+    updated_at: string;
+  };
+}
+
+// Defined BlockPedagogicalContent as an alias for consistency
+export type BlockPedagogicalContent = BlockContent;
 
 export enum BlockType {
   UMBRAL = 'UMBRAL',
@@ -76,61 +146,14 @@ export enum BlockType {
   CIERRE = 'CIERRE'
 }
 
-export interface BlockContent {
-  id: string;
-  type: BlockType;
-  title: string;
-  content: string;
-  counts_for_progress: boolean;
-  optional?: boolean;
-  questions?: QuizQuestion[];
-}
-
-export interface QuizQuestion {
-  id: string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-}
-
-export interface UnitMetadata {
-  version: string;
-  updated_at: string;
-  change_note: string;
-}
-
-export interface Unit {
-  id: string;
-  subject_id: string;
-  number: number;
-  title: string;
-  description: string;
-  isAvailable: boolean;
-  pdfBaseUrl: string;
-  pdfPrintUrl: string;
-  blocks: BlockContent[];
-  metadata?: UnitMetadata;
-}
-
+// Updated ProgressRecord to include UI-specific properties and subject_id for dashboard logic
 export interface ProgressRecord {
-  id?: string;
+  id: number;
+  course_id: number;
+  block_id: any; // ID can be numeric (DB) or string (Block Key)
   user_id: string;
-  subject_id: string;
-  unit_id: string;
-  block_id: string;
-  visited: boolean;
-  completed: boolean;
-  timestamp: string;
-}
-
-export interface Assessment {
-  id: string;
-  user_id: string;
-  subject_id: string;
-  unit_id: string;
-  type: 'TP' | 'EVALUACION';
-  grade: string;
-  feedback: string;
-  attachments?: string[];
-  date: string;
+  status: string;
+  completed_at: string;
+  visited?: boolean; // UI state for UnitPage
+  subject_id?: string | number; // Grouping key for StudentDashboard
 }
