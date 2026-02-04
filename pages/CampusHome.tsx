@@ -28,102 +28,74 @@ const CampusHome: React.FC<CampusHomeProps> = ({
   };
 
   return (
-    <div className="space-y-16 pb-32">
-      <section className="text-center py-12">
-        <h1 className="text-5xl sm:text-6xl font-black text-white mb-8 tracking-tighter">Campus · Cuaderno Vivo</h1>
-        <div className="max-w-2xl mx-auto space-y-6">
-          <p className="text-xl text-slate-400 serif italic leading-relaxed">
-            "Este no es un sitio para descargar archivos. Es un lugar para aprender a leer y construir un recorrido propio."
+    <div className="space-y-20 pb-40">
+      <section className="text-center py-16">
+        <h1 className="text-6xl sm:text-7xl font-black text-white mb-10 tracking-tighter leading-none">Campus <span className="text-sky-400">·</span> Cuaderno Vivo</h1>
+        <div className="max-w-2xl mx-auto space-y-8">
+          <p className="text-2xl text-slate-400 serif italic leading-relaxed">
+            "No consumimos información. Recorremos conocimiento."
           </p>
-          <div className="h-1.5 w-24 bg-white/10 mx-auto rounded-full"></div>
+          <div className="h-1 w-32 bg-sky-500 mx-auto rounded-full shadow-[0_0_20px_rgba(56,189,248,0.5)]"></div>
         </div>
       </section>
 
-      <section className="max-w-3xl mx-auto no-print">
-        <div className="card-surface rounded-3xl overflow-hidden shadow-2xl">
-          <button 
-            onClick={() => setShowHowTo(!showHowTo)}
-            className="w-full px-8 py-5 flex items-center justify-between text-left hover:bg-white/5 transition-all"
-          >
-            <span className="font-black text-slate-200 uppercase tracking-widest text-xs">Instrucciones de Uso</span>
-            <svg className={`w-6 h-6 text-slate-500 transition-transform ${showHowTo ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
-          </button>
-          {showHowTo && (
-            <div className="px-8 pb-8 text-sm text-slate-400 leading-relaxed space-y-4 border-t border-slate-800 pt-6 serif">
-              <p>1. <strong>Inscribite</strong> a las materias de tu división.</p>
-              <p>2. Una vez que el docente apruebe tu acceso, el cuaderno se desbloqueará.</p>
-              <p>3. Usá el <strong>PDF Base</strong> como eje central de lectura.</p>
-            </div>
-          )}
-        </div>
-      </section>
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        {SUBJECTS.map((subject) => {
+          const req = getStatus(subject.id);
+          const status = req?.status || EnrollmentStatus.NONE;
+          const canEnter = status === EnrollmentStatus.APPROVED || isTeacher;
 
-      <section className="space-y-10">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600">Ecosistema de Asignaturas</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {SUBJECTS.map((subject) => {
-            const req = getStatus(subject.id);
-            const status = req?.status || EnrollmentStatus.NONE;
-            const canEnter = status === EnrollmentStatus.APPROVED || isTeacher;
-
-            return (
-              <div 
-                key={subject.id}
-                className={`group relative card-surface rounded-[2rem] p-8 transition-all flex flex-col justify-between h-64 ${canEnter ? 'hover:border-white hover:shadow-[0_0_40px_rgba(255,255,255,0.05)] cursor-pointer' : 'opacity-60 grayscale'}`}
-                onClick={() => canEnter && onSelectSubject(String(subject.id))}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{subject.units_count} Unidades</span>
-                    <div className="flex gap-2">
-                      {status === EnrollmentStatus.PENDING && (
-                        <span className="px-3 py-1 bg-amber-900/30 text-amber-400 text-[9px] font-black uppercase rounded-full border border-amber-800/50 animate-pulse">Pendiente</span>
-                      )}
-                      {status === EnrollmentStatus.APPROVED && (
-                        <span className="px-3 py-1 bg-emerald-900/30 text-emerald-400 text-[9px] font-black uppercase rounded-full border border-emerald-800/50">Habilitado</span>
-                      )}
-                    </div>
+          return (
+            <div 
+              key={subject.id}
+              className={`group relative card-surface rounded-[3rem] p-10 transition-all flex flex-col justify-between h-80 border-2 ${canEnter ? 'border-slate-700 hover:border-sky-500 cursor-pointer hover:-translate-y-2' : 'border-slate-800 opacity-40 grayscale'}`}
+              onClick={() => canEnter && onSelectSubject(String(subject.id))}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-500 bg-sky-500/10 px-4 py-1.5 rounded-full">{subject.units_count || 0} Unidades</span>
+                  <div className="flex gap-2">
+                    {status === EnrollmentStatus.PENDING && (
+                      <span className="px-3 py-1 bg-amber-500/20 text-amber-500 text-[9px] font-black uppercase rounded-full border border-amber-500/30">Pendiente</span>
+                    )}
                   </div>
-                  <h3 className="text-2xl font-black text-white leading-tight tracking-tight group-hover:translate-x-1 transition-transform">{subject.name}</h3>
                 </div>
-
-                <div className="mt-6 pt-6 border-t border-slate-800/50">
-                  {isTeacher || status === EnrollmentStatus.APPROVED ? (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isTeacher ? 'Gestionar' : 'Ingresar'}</span>
-                      <svg className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                    </div>
-                  ) : (
-                    <>
-                      {status === EnrollmentStatus.NONE && (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onEnroll(String(subject.id)); }}
-                          className="w-full py-3.5 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
-                        >
-                          Solicitar Acceso
-                        </button>
-                      )}
-                      {status === EnrollmentStatus.PENDING && (
-                        <div className="flex flex-col items-center">
-                          <p className="text-[10px] text-amber-500 serif italic mb-3">En revisión...</p>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); if (req && 'id' in req) onCancelEnroll(req.id); }}
-                            className="text-[9px] font-black text-slate-600 uppercase tracking-widest hover:text-rose-500 transition-colors"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                <h3 className="text-3xl font-black text-white leading-tight tracking-tight mb-4">{subject.name}</h3>
               </div>
-            );
-          })}
-        </div>
+
+              <div className="mt-8 pt-8 border-t border-slate-700/50">
+                {isTeacher || status === EnrollmentStatus.APPROVED ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest group-hover:text-white">{isTeacher ? 'ADMINISTRAR' : 'INGRESAR'}</span>
+                    <svg className="w-6 h-6 text-sky-500 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                  </div>
+                ) : (
+                  <>
+                    {status === EnrollmentStatus.NONE && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onEnroll(String(subject.id)); }}
+                        className="w-full py-5 bg-white text-black text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-sky-400 transition-colors shadow-2xl shadow-black/40"
+                      >
+                        Solicitar Acceso
+                      </button>
+                    )}
+                    {status === EnrollmentStatus.PENDING && (
+                      <div className="flex flex-col items-center">
+                        <p className="text-[11px] text-amber-500 font-bold mb-4 uppercase tracking-widest">En Revisión...</p>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); if (req && 'id' in req) onCancelEnroll(req.id); }}
+                          className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:text-rose-500 transition-colors"
+                        >
+                          Cancelar Solicitud
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </section>
     </div>
   );
