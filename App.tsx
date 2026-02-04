@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, UserRole, Subject, Unit, ProgressRecord, Profile, Assessment } from './types';
+import { User, UserRole, Subject, Unit, ProgressRecord, Profile, Assessment, EnrollmentRequest, EnrollmentStatus } from './types';
 import { SUBJECTS, UNIT_CONTENT } from './data';
 import { supabase } from './supabase';
 import Layout from './components/Layout';
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [units, setUnits] = useState<Record<string, Unit>>(UNIT_CONTENT);
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [enrollRequests, setEnrollRequests] = useState<EnrollmentRequest[]>([]);
   
   const [view, setView] = useState<'home' | 'subject' | 'unit' | 'teacher' | 'student'>('home');
   const [activeSubject, setActiveSubject] = useState<Subject | null>(null);
@@ -74,7 +75,7 @@ const App: React.FC = () => {
         profile: profile as Profile
       });
 
-      fetchUserData(authUser.id);
+      fetchUserData(authUser.id, profile.role);
 
       if (profile.role === UserRole.TEACHER) {
         setView('teacher');
@@ -89,18 +90,71 @@ const App: React.FC = () => {
     }
   };
 
-  const fetchUserData = async (userId: string) => {
-    const { data: progressData } = await supabase
-      .from('progress')
-      .select('*')
-      .eq('user_id', userId);
+  const fetchUserData = async (userId: string, role: UserRole) => {
+    const { data: progressData } = await supabase.from('progress').select('*').eq('user_id', userId);
     if (progressData) setProgress(progressData);
 
-    const { data: assessmentData } = await supabase
-      .from('assessments')
-      .select('*')
-      .eq('user_id', userId);
+    const { data: assessmentData } = await supabase.from('assessments').select('*').eq('user_id', userId);
     if (assessmentData) setAssessments(assessmentData);
+
+    // Fetch Enrollments
+    if (role === UserRole.TEACHER) {
+      const { data: reqs } = await supabase.from('enroll_requests').select('*');
+      if (reqs) setEnrollRequests(reqs);
+    } else {
+      const { data: reqs } = await supabase.from('enroll_requests').select('*').eq('student_id', userId);
+      if (reqs) setEnrollRequests(reqs);
+    }
+  };
+
+  const handleEnrollRequest = async (subjectId: string) => {
+    if (!currentUser) return;
+    
+    const newRequest: Partial<EnrollmentRequest> = {
+      student_id: currentUser.id,
+      subject_id: subjectId,
+      status: EnrollmentStatus.PENDING,
+      created_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase.from('enroll_requests').insert(newRequest).select().single();
+    if (data) setEnrollRequests([...enrollRequests, data]);
+  };
+
+  const handleCancelEnrollRequest = async (requestId: string) => {
+    await supabase.from('enroll_requests').delete().eq('id', requestId);
+    setEnrollRequests(enrollRequests.filter(r => r.id !== requestId));
+  };
+
+  const handleUpdateEnrollRequest = async (requestId: string, status: EnrollmentStatus) => {
+    if (!currentUser) return;
+    
+    const { data, error } = await supabase
+      .from('enroll_requests')
+      .update({ 
+        status, 
+        decided_at: new Date().toISOString(),
+        decided_by: currentUser.id 
+      })
+      .eq('id', requestId)
+      .select()
+      .single();
+
+    if (data) {
+      setEnrollRequests(enrollRequests.map(r => r.id === requestId ? data : r));
+      
+      // EMAIL TRIGGER SIMULATION
+      if (status === EnrollmentStatus.DENIED) {
+        try {
+          // Invoicamos Supabase Edge Function
+          await supabase.functions.invoke('notify-denial', {
+            body: { requestId, studentId: data.student_id, subjectId: data.subject_id }
+          });
+        } catch (e) {
+          console.warn("Fallo el envío de email, pero el estado se actualizó igual.", e);
+        }
+      }
+    }
   };
 
   const handleUpdateProgress = async (blockId: string) => {
@@ -158,7 +212,14 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (currentUser?.profile.role === UserRole.TEACHER && view === 'teacher') {
-      return <TeacherDashboard units={units} onUpdateUnit={(u) => setUnits(prev => ({...prev, [u.id]: u}))} />;
+      return (
+        <TeacherDashboard 
+          units={units} 
+          enrollRequests={enrollRequests}
+          onUpdateEnrollRequest={handleUpdateEnrollRequest}
+          onUpdateUnit={(u) => setUnits(prev => ({...prev, [u.id]: u}))} 
+        />
+      );
     }
 
     if (view === 'student') {
@@ -179,18 +240,26 @@ const App: React.FC = () => {
       case 'home':
         return (
           <CampusHome 
+            enrollRequests={enrollRequests}
             onSelectSubject={(id) => {
               setActiveSubject(SUBJECTS.find(s => s.id === id) || null);
               setView('subject');
             }} 
+            onEnroll={handleEnrollRequest}
+            onCancelEnroll={handleCancelEnrollRequest}
           />
         );
       case 'subject':
+        const subjectRequest = enrollRequests.find(r => r.subject_id === activeSubject?.id);
+        const isApproved = subjectRequest?.status === EnrollmentStatus.APPROVED;
+        
         return activeSubject ? (
           <SubjectPage 
             subject={activeSubject} 
+            isApproved={isApproved}
             userCourseId={currentUser?.profile.course_id}
             onSelectUnit={(unitId) => {
+              if (!isApproved) return;
               setActiveUnitId(unitId);
               setView('unit');
             }}
