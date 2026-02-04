@@ -15,14 +15,10 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
   const [selectedCourse, setSelectedCourse] = useState<string | number>(COURSES[6].id);
   const [updatingUnitId, setUpdatingUnitId] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [activeTab, setActiveTab] = useState<'progress' | 'enrollments'>('progress');
+  const [activeTab, setActiveTab] = useState<'progress' | 'enrollments' | 'students'>('progress');
   
-  // Para el portal de creación rápida (placeholder)
-  const [presetSubject, setPresetSubject] = useState<string | null>(null);
-  const [presetNumber, setPresetNumber] = useState<number | null>(null);
-
   const students = MOCK_USERS.filter(u => 
-    u.profile.role === UserRole.STUDENT && u.profile.course_id === String(selectedCourse)
+    u.profile.role === UserRole.STUDENT && (u.profile.course_id === String(selectedCourse) || !selectedCourse)
   );
 
   const pendingRequests = enrollRequests.filter(r => r.status === EnrollmentStatus.PENDING);
@@ -64,6 +60,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
             onChange={(e) => setSelectedCourse(e.target.value)}
             className="bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
           >
+            <option value="">Todos los cursos</option>
             {COURSES.map(c => (
               <option key={c.id} value={c.id}>
                 {c.grade_level || c.grade_level_id} "{c.division}" - {c.orientation || 'Técnica'}
@@ -73,12 +70,18 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
         </div>
       </header>
 
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-slate-200 no-print">
         <button 
           onClick={() => setActiveTab('progress')}
           className={`px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all border-b-2 ${activeTab === 'progress' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
         >
           Ecosistema de Contenidos
+        </button>
+        <button 
+          onClick={() => setActiveTab('students')}
+          className={`px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all border-b-2 ${activeTab === 'students' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+        >
+          Lista de Alumnos
         </button>
         <button 
           onClick={() => setActiveTab('enrollments')}
@@ -89,7 +92,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
       </div>
 
       {activeTab === 'enrollments' && (
-        <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <section className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-100">
             <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Gestión de Admisiones e Inscripciones</h3>
           </div>
@@ -106,7 +109,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
               <tbody className="divide-y divide-slate-50">
                 {enrollRequests.length > 0 ? enrollRequests.map(req => {
                   const student = MOCK_USERS.find(u => u.id === req.student_id);
-                  const subject = SUBJECTS.find(s => String(s.id) === req.subject_id);
+                  const subject = SUBJECTS.find(s => String(s.id) === String(req.subject_id));
                   return (
                     <tr key={req.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
@@ -156,15 +159,15 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
 
       {activeTab === 'progress' && (
         <div className="space-y-12">
-          {SUBJECTS.filter(s => s.courses?.includes(String(selectedCourse)) || !selectedCourse).map(subject => (
+          {SUBJECTS.filter(s => !selectedCourse || s.courses?.includes(String(selectedCourse))).map(subject => (
             <section key={subject.id} className="space-y-4">
               <div className="flex items-center justify-between px-2">
                 <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">{subject.name}</h3>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Plan de {subject.units_count} Unidades</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Plan de {subject.units_count || 3} Unidades</span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: subject.units_count || 3 }).map((_, i) => {
+                {Array.from({ length: Number(subject.units_count) || 3 }).map((_, i) => {
                   const unitNumber = i + 1;
                   const unitId = `${subject.id}_u${unitNumber}`;
                   const unit = units[unitId];
@@ -225,55 +228,56 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, enrollReques
               </div>
             </section>
           ))}
-
-          {/* Tabla de Seguimiento (Solo si hay estudiantes) */}
-          <section className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-             <div className="p-6 border-b border-slate-100">
-                <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Seguimiento de Alumnos ({selectedCourse})</h3>
-              </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Estudiante</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Avance Total</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Última Señal</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {students.length > 0 ? students.map(student => (
-                    <tr key={student.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-800">{student.profile.full_name}</div>
-                        <div className="text-[10px] text-slate-400">{student.email}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden max-w-[80px]">
-                            <div className="bg-slate-900 h-full w-[15%]"></div>
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-600">15%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-slate-600 italic">Lectura iniciada</div>
-                        <div className="text-[9px] text-slate-400 uppercase tracking-tighter">Hoy</div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-[10px] font-bold text-slate-900 hover:underline uppercase tracking-widest">Ver Perfil</button>
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">No hay estudiantes en este curso.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
         </div>
+      )}
+
+      {activeTab === 'students' && (
+        <section className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-slate-100">
+            <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Seguimiento de Alumnos ({selectedCourse || 'Todos'})</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Estudiante</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Avance Total</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Última Señal</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {students.length > 0 ? students.map(student => (
+                  <tr key={student.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-800">{student.profile.full_name}</div>
+                      <div className="text-[10px] text-slate-400">{student.email}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden max-w-[80px]">
+                          <div className="bg-slate-900 h-full w-[15%]"></div>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-600">15%</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-xs text-slate-600 italic">Lectura iniciada</div>
+                      <div className="text-[9px] text-slate-400 uppercase tracking-tighter">Hoy</div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-[10px] font-bold text-slate-900 hover:underline uppercase tracking-widest">Ver Perfil</button>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">No hay estudiantes registrados.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </div>
   );
