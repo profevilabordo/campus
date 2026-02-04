@@ -2,23 +2,27 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 /**
- * Acceso robusto y seguro a variables de entorno.
- * Si las variables no existen, evitamos que el SDK lance un Uncaught Error.
+ * Senior Architecture Pattern: Safe Variable Extraction
+ * Intentamos obtener las variables de múltiples fuentes posibles (Vite, Process, Global).
  */
-const SUPABASE_URL = 
-  (typeof process !== 'undefined' && process.env?.SUPABASE_URL) || 
-  (typeof process !== 'undefined' && process.env?.VITE_SUPABASE_URL) ||
-  '';
+const getSafeEnv = (key: string): string => {
+  if (typeof process !== 'undefined' && process.env?.[key]) return process.env[key] as string;
+  // @ts-ignore - Soporte para entornos basados en Vite
+  if (typeof import.meta !== 'undefined' && import.meta.env?.[`VITE_${key}`]) return import.meta.env[`VITE_${key}`];
+  return '';
+};
 
-const SUPABASE_ANON_KEY = 
-  (typeof process !== 'undefined' && process.env?.SUPABASE_ANON_KEY) || 
-  (typeof process !== 'undefined' && process.env?.VITE_SUPABASE_ANON_KEY) ||
-  '';
+const URL = getSafeEnv('SUPABASE_URL');
+const KEY = getSafeEnv('SUPABASE_ANON_KEY');
 
-// Solo inicializamos si tenemos los datos mínimos. 
-// Si no, exportamos null para que la App active el 'Demo Mode'.
-export const isSupabaseConfigured = SUPABASE_URL !== '' && SUPABASE_ANON_KEY !== '';
+// Validamos estrictamente antes de llamar al constructor del SDK.
+// Esto evita el error "supabaseUrl is required" que rompe la ejecución en Vercel.
+export const isSupabaseConfigured = URL.length > 0 && URL.startsWith('http') && KEY.length > 0;
 
 export const supabase = isSupabaseConfigured 
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null as any; // Cast controlado para evitar errores de tipo en tiempo de compilación
+  ? createClient(URL, KEY)
+  : null;
+
+if (!isSupabaseConfigured) {
+  console.warn("🛡️ Campus: Supabase no detectado o mal configurado. El sistema operará en Modo Local/Demo.");
+}
