@@ -1,13 +1,19 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-// Accedemos a las variables de entorno inyectadas por el entorno de ejecución (Vercel/Vite)
-// process.env es el estándar para acceder a secretos configurados en el dashboard
-const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
+/**
+ * IMPORTANTE PARA VITE/VERCEL:
+ * Para que las variables de entorno sean visibles en el navegador, 
+ * deben estar configuradas en Vercel con el prefijo VITE_
+ * Ejemplo: VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY
+ */
 
-if (supabaseUrl === 'https://your-project.supabase.co') {
-  console.warn("Advertencia: SUPABASE_URL no está configurada. Usando valor por defecto.");
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+
+// Verificación de seguridad en consola del navegador
+if (supabaseUrl.includes('your-project')) {
+  console.error("ERROR DE CONFIGURACIÓN: No se detectaron las variables VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY. Verificá el dashboard de Vercel.");
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
