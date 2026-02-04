@@ -22,7 +22,6 @@
             flex-direction: column;
             min-height: 100vh;
         }
-        /* Fallback UI: Se oculta cuando React monta */
         #fallback-loader {
             position: fixed;
             inset: 0;
@@ -30,8 +29,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 0;
+            z-index: 9999; /* Aseguramos que esté por encima de todo al inicio */
             background-color: var(--bg-deep);
+            transition: opacity 0.5s ease-out;
         }
         .spinner {
             width: 40px;
