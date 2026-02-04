@@ -85,7 +85,6 @@ const App: React.FC = () => {
   const handleEnroll = async (subjectId: string) => {
     if (!currentUser) return;
     try {
-      // Cambio student_id por user_id para que coincida con la DB
       const newRequest = {
         user_id: currentUser.id,
         subject_id: subjectId,
@@ -140,7 +139,7 @@ const App: React.FC = () => {
       if (error) throw error;
       const { data: units } = await supabase.from('units').select('*').order('unit_number', { ascending: true });
       setDbUnits(units || []);
-      alert("Unidad guardada.");
+      alert("Unidad guardada correctamente.");
     } catch (err: any) {
       alert("Error: " + err.message);
     }
@@ -218,6 +217,7 @@ const App: React.FC = () => {
 
       {view === 'teacher' && (
         <TeacherDashboard 
+          subjects={subjects}
           units={unitsMap} 
           enrollRequests={enrollRequests} 
           onUpdateEnrollRequest={handleUpdateEnrollStatus} 
