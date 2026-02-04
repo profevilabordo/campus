@@ -16,8 +16,6 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Si Supabase no está configurado, entramos en Demo automáticamente
   const [demoMode, setDemoMode] = useState(!isSupabaseConfigured);
   
   const [subjects, setSubjects] = useState<Subject[]>(SUBJECTS);
@@ -49,41 +47,51 @@ const App: React.FC = () => {
   }, [dbUnits]);
 
   useEffect(() => {
+    let mounted = true;
+
     const init = async () => {
-      console.log("🛡️ App: Iniciando ciclo de vida. Modo Supabase:", isSupabaseConfigured);
-      
+      // Si no hay configuración, saltamos directo a Demo
       if (!isSupabaseConfigured) {
-        setDemoMode(true);
-        setCurrentUser(MOCK_USERS[1]); // Profesor demo por defecto
-        setSession({ user: MOCK_USERS[1] });
-        setLoading(false);
+        if (mounted) {
+          setDemoMode(true);
+          setCurrentUser(MOCK_USERS[1]);
+          setSession({ user: MOCK_USERS[1] });
+          setLoading(false);
+        }
         return;
       }
 
       try {
-        const { data: { session: curSession }, error: sessionError } = await supabase!.auth.getSession();
+        // Ponemos un timeout al fetch de sesión
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
         
-        if (sessionError) throw sessionError;
-
-        setSession(curSession);
-        if (curSession) {
-          await fetchRemoteData(curSession.user);
-        } else {
+        const { data: { session: curSession } }: any = await Promise.race([sessionPromise, timeoutPromise]);
+        
+        if (mounted) {
+          setSession(curSession);
+          if (curSession) {
+            await fetchRemoteData(curSession.user);
+          } else {
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error("🛡️ App: Forzando Modo Demo por fallo en red o timeout.");
+        if (mounted) {
+          setDemoMode(true);
+          setCurrentUser(MOCK_USERS[1]);
+          setSession({ user: MOCK_USERS[1] });
           setLoading(false);
         }
-      } catch (err: any) {
-        console.error("🛡️ App: Fallo en conexión remota, activando fallback local.", err);
-        setDemoMode(true);
-        setCurrentUser(MOCK_USERS[1]);
-        setSession({ user: MOCK_USERS[1] });
-        setLoading(false);
       }
     };
+
     init();
+    return () => { mounted = false; };
   }, []);
 
   const fetchRemoteData = async (user: any) => {
-    if (!supabase) return;
     try {
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       if (profile) {
@@ -103,7 +111,7 @@ const App: React.FC = () => {
 
       if (s.data) {
         const merged = [...SUBJECTS];
-        s.data.forEach(rs => {
+        s.data.forEach((rs: any) => {
           const idx = merged.findIndex(as => String(as.id) === String(rs.id));
           if (idx !== -1) merged[idx] = { ...merged[idx], ...rs };
           else merged.push(rs);
@@ -115,15 +123,13 @@ const App: React.FC = () => {
       setUserProgress(p.data || []);
       setLoading(false);
     } catch (err) {
-      console.error("🛡️ App: Error cargando datos remotos:", err);
       setLoading(false);
     }
   };
 
   if (loading) return (
-    <div className="flex flex-col h-screen items-center justify-center bg-[#020617] text-white">
-      <div className="w-16 h-16 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin mb-6"></div>
-      <p className="font-black uppercase tracking-[0.4em] text-[10px] text-sky-400">Accediendo al Ecosistema...</p>
+    <div className="flex h-screen items-center justify-center bg-[#020617]">
+      <div className="animate-pulse text-sky-400 font-black text-[10px] uppercase tracking-[0.5em]">Accediendo...</div>
     </div>
   );
 
@@ -133,19 +139,10 @@ const App: React.FC = () => {
     enrollRequests.some(r => String(r.subject_id) === String(activeSubjectId) && r.user_id === currentUser?.id && r.status === EnrollmentStatus.APPROVED);
 
   return (
-    <Layout 
-      user={currentUser} 
-      onLogout={() => { 
-        if(demoMode) {
-          window.location.reload(); 
-        } else {
-          supabase!.auth.signOut();
-        }
-      }}
-    >
+    <Layout user={currentUser} onLogout={() => { if(demoMode) window.location.reload(); else supabase.auth.signOut(); }}>
       {demoMode && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-amber-500 text-black text-[9px] font-black uppercase px-6 py-2 rounded-full border-4 border-[#020617] shadow-2xl">
-          Modo Simulación (Sin Conexión)
+          Modo Demo
         </div>
       )}
 
@@ -155,12 +152,7 @@ const App: React.FC = () => {
           enrollRequests={enrollRequests.filter(r => r.user_id === currentUser?.id)}
           onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }}
           onEnroll={(id) => {
-            if (demoMode) {
-              const newReq = { id: 'demo-' + Math.random(), user_id: currentUser!.id, subject_id: id, status: EnrollmentStatus.APPROVED };
-              setEnrollRequests([...enrollRequests, newReq]);
-            } else {
-              // Lógica de Supabase real aquí
-            }
+            if (demoMode) setEnrollRequests([...enrollRequests, { id: 'd'+Math.random(), user_id: currentUser!.id, subject_id: id, status: EnrollmentStatus.APPROVED }]);
           }}
           onCancelEnroll={() => {}}
         />
@@ -197,31 +189,21 @@ const App: React.FC = () => {
           enrollRequests={enrollRequests} 
           progressRecords={userProgress}
           profiles={demoMode ? MOCK_USERS.map(u => u.profile) : allProfiles}
-          onUpdateEnrollRequest={(id, status) => {
-             setEnrollRequests(enrollRequests.map(r => r.id === id ? { ...r, status } : r));
-          }} 
-          onUpdateUnit={(nu) => {
-             setDbUnits([...dbUnits, { id: nu.id, subject_id: 0, unit_number: nu.number, title: nu.title, content_json: nu }]);
-          }}
+          onUpdateEnrollRequest={(id, status) => setEnrollRequests(enrollRequests.map(r => r.id === id ? { ...r, status } : r))} 
+          onUpdateUnit={(nu) => setDbUnits([...dbUnits, { id: nu.id, subject_id: 0, unit_number: nu.number, title: nu.title, content_json: nu }])}
         />
       )}
 
       {view === 'student' && (
-        <StudentDashboard 
-          user={currentUser!} 
-          progress={userProgress} 
-          assessments={[]} 
-          onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }}
-        />
+        <StudentDashboard user={currentUser!} progress={userProgress} assessments={[]} onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }} />
       )}
 
-      <div className="fixed bottom-10 right-10 no-print z-[70] flex flex-col gap-4">
+      <div className="fixed bottom-10 right-10 no-print z-[70]">
         <button 
           onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
-          className="p-6 rounded-2xl bg-sky-500 text-white shadow-2xl border-4 border-slate-900 hover:scale-110 transition-all group"
-          title="Panel Personal"
+          className="p-6 rounded-2xl bg-sky-500 text-white shadow-2xl border-4 border-slate-900 hover:scale-110 transition-all"
         >
-          <svg className="w-8 h-8 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
         </button>
       </div>
     </Layout>
