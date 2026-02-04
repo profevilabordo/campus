@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { COURSES, SUBJECTS, MOCK_USERS, UNIT_CONTENT } from '../data';
+import { COURSES, SUBJECTS, MOCK_USERS } from '../data';
 import { UserRole, Unit } from '../types';
 import UnitUpdatePortal from '../components/UnitUpdatePortal';
 
@@ -10,10 +10,12 @@ interface TeacherDashboardProps {
 }
 
 const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, onUpdateUnit }) => {
-  const [selectedCourse, setSelectedCourse] = useState(COURSES[6].id); // 4D
+  const [selectedCourse, setSelectedCourse] = useState(COURSES[6].id);
   const [updatingUnitId, setUpdatingUnitId] = useState<string | null>(null);
-  // Fix: Access role and course_id through the profile property
-  const students = MOCK_USERS.filter(u => u.profile.role === UserRole.STUDENT && u.profile.course_id === selectedCourse);
+  
+  const students = MOCK_USERS.filter(u => 
+    u.profile.role === UserRole.STUDENT && u.profile.course_id === selectedCourse
+  );
 
   const activeUnitToUpdate = updatingUnitId ? units[updatingUnitId] : null;
 
@@ -59,8 +61,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, onUpdateUnit
           <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Gestión de Contenidos (JSON)</h3>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Fix: Explicitly type 'unit' as 'Unit' to avoid 'unknown' property access errors */}
-          {Object.values(units).map((unit: Unit) => (
+          {Object.values(units).map((unit) => (
             <div key={unit.id} className="border border-slate-100 bg-slate-50/50 p-4 rounded-xl flex items-center justify-between">
               <div>
                 <h4 className="font-bold text-slate-800 text-sm">Unidad {unit.number}</h4>
@@ -93,7 +94,6 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ units, onUpdateUnit
               {students.length > 0 ? students.map(student => (
                 <tr key={student.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
-                    {/* Fix: Access full_name via profile property */}
                     <div className="font-bold text-slate-800">{student.profile.full_name}</div>
                     <div className="text-xs text-slate-400">ID: {student.id}</div>
                   </td>
