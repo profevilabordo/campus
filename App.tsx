@@ -25,7 +25,6 @@ const App: React.FC = () => {
   const [activeSubjectId, setActiveSubjectId] = useState<string | number | null>(null);
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
 
-  // Mapear unidades de DB a objeto Record para compatibilidad
   const unitsMap: Record<string, Unit> = {};
   Object.values(UNIT_CONTENT).forEach(u => unitsMap[u.id] = u);
   dbUnits.forEach(u => {
@@ -70,7 +69,6 @@ const App: React.FC = () => {
       setSubjects(allSubjects);
       setDbUnits(units || []);
 
-      // Cargar solicitudes de inscripción (Enrollments)
       const { data: enrolls } = await supabase.from('enrollments').select('*');
       if (enrolls) setEnrollRequests(enrolls as any[]);
 
@@ -87,8 +85,9 @@ const App: React.FC = () => {
   const handleEnroll = async (subjectId: string) => {
     if (!currentUser) return;
     try {
+      // Cambio student_id por user_id para que coincida con la DB
       const newRequest = {
-        student_id: currentUser.id,
+        user_id: currentUser.id,
         subject_id: subjectId,
         status: EnrollmentStatus.PENDING
       };
@@ -170,10 +169,9 @@ const App: React.FC = () => {
   if (loading) return <div className="flex h-screen items-center justify-center">Cargando Ecosistema...</div>;
   if (!session) return <Auth onSession={(s) => { setSession(s); fetchAllData(s.user); }} />;
 
-  // Determinar si el usuario tiene acceso a la materia activa
   const currentEnrollStatus = enrollRequests.find(r => 
     String(r.subject_id) === String(activeSubjectId) && 
-    r.student_id === currentUser?.id
+    r.user_id === currentUser?.id
   )?.status || EnrollmentStatus.NONE;
 
   const isApproved = currentUser?.profile.role === UserRole.TEACHER || currentEnrollStatus === EnrollmentStatus.APPROVED;
@@ -183,7 +181,7 @@ const App: React.FC = () => {
       {view === 'home' && (
         <CampusHome 
           userRole={currentUser?.profile.role}
-          enrollRequests={enrollRequests.filter(r => r.student_id === currentUser?.id)}
+          enrollRequests={enrollRequests.filter(r => r.user_id === currentUser?.id)}
           onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }}
           onEnroll={handleEnroll}
           onCancelEnroll={handleCancelEnroll}
