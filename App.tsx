@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, UserRole, Subject, DBUnit, ProgressRecord, Course, Unit, EnrollmentRequest, EnrollmentStatus } from './types';
+import { User, UserRole, Subject, DBUnit, ProgressRecord, Unit, EnrollmentRequest, EnrollmentStatus } from './types';
 import { supabase } from './supabase';
 import { UNIT_CONTENT, SUBJECTS } from './data';
 import Layout from './components/Layout';
@@ -56,8 +56,6 @@ const App: React.FC = () => {
       setCurrentUser({ id: user.id, email: user.email, profile });
 
       const { data: subs } = await supabase.from('subjects').select('*');
-      const { data: units } = await supabase.from('units').select('*').order('unit_number', { ascending: true });
-      
       const allSubjects = [...SUBJECTS];
       if (subs) {
         subs.forEach(s => {
@@ -67,10 +65,12 @@ const App: React.FC = () => {
         });
       }
       setSubjects(allSubjects);
+
+      const { data: units } = await supabase.from('units').select('*').order('unit_number', { ascending: true });
       setDbUnits(units || []);
 
       const { data: enrolls } = await supabase.from('enrollments').select('*');
-      if (enrolls) setEnrollRequests(enrolls as any[]);
+      setEnrollRequests(enrolls || []);
 
       const { data: prog } = await supabase.from('progress').select('*').eq('user_id', user.id);
       setUserProgress(prog || []);
@@ -85,16 +85,18 @@ const App: React.FC = () => {
   const handleEnroll = async (subjectId: string) => {
     if (!currentUser) return;
     try {
-      const newRequest = {
-        user_id: currentUser.id,
+      const { error } = await supabase.from('enrollments').insert({
+        user_id: currentUser.id, // Columna correcta
         subject_id: subjectId,
         status: EnrollmentStatus.PENDING
-      };
+      });
       
-      const { data, error } = await supabase.from('enrollments').insert(newRequest).select().single();
       if (error) throw error;
       
-      if (data) setEnrollRequests([...enrollRequests, data as any]);
+      // Recargar solicitudes para asegurar consistencia
+      const { data: enrolls } = await supabase.from('enrollments').select('*');
+      setEnrollRequests(enrolls || []);
+      alert("Solicitud enviada correctamente.");
     } catch (err: any) {
       alert("Error al solicitar inscripción: " + err.message);
     }
@@ -139,7 +141,7 @@ const App: React.FC = () => {
       if (error) throw error;
       const { data: units } = await supabase.from('units').select('*').order('unit_number', { ascending: true });
       setDbUnits(units || []);
-      alert("Unidad guardada correctamente.");
+      alert("Unidad guardada.");
     } catch (err: any) {
       alert("Error: " + err.message);
     }
@@ -165,7 +167,7 @@ const App: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Cargando Ecosistema...</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center">Cargando Campus...</div>;
   if (!session) return <Auth onSession={(s) => { setSession(s); fetchAllData(s.user); }} />;
 
   const currentEnrollStatus = enrollRequests.find(r => 
@@ -204,15 +206,6 @@ const App: React.FC = () => {
           onUpdateProgress={handleToggleBlockProgress}
           onBack={() => setView('subject')}
         />
-      )}
-
-      {(view === 'teacher' || view === 'student') && (
-        <div className="mb-8">
-          <button onClick={() => setView('home')} className="text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 flex items-center gap-2">
-             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-             Volver al Campus
-          </button>
-        </div>
       )}
 
       {view === 'teacher' && (
