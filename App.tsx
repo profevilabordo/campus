@@ -184,40 +184,61 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const { data, error: sessionError } = await withTimeout(supabase.auth.getSession(), "AUTH_SESSION");
-        if (sessionError) throw sessionError;
+useEffect(() => {
+  console.log("🟦 APP_USEEFFECT_START", { isSupabaseConfigured });
 
-        const s = data?.session;
-        if (s) {
-          setSession(s);
-          await loadUserData(s.user.id, s.user.email!);
-        } else if (!isSupabaseConfigured) {
-          throw new Error("DEMO_REQUIRED");
-        } else {
-          setLoading(false);
-          removeLoader();
-        }
-      } catch (e: any) {
-        console.error("🛡️ INIT_FAILED:", e.message);
-        if (e.message === "DEMO_REQUIRED" || !isSupabaseConfigured) {
-          setDemoMode(true);
-          const demoUser = MOCK_USERS[1];
-          setCurrentUser(demoUser);
-          setSession({ user: demoUser });
-          setLoading(false);
-          removeLoader();
-        } else {
-          setError(e.message);
-          setLoading(false);
-          removeLoader();
-        }
+  // 🔥 CORTA-SPINNER: si en 12s no terminó, muestro error y saco loader sí o sí
+  const hardStop = setTimeout(() => {
+    console.error("🟥 HARD_STOP_LOADING: no terminó init en 12s");
+    setError("La app quedó colgada en sincronización. Abrí consola (F12) y copiá el primer error rojo.");
+    setLoading(false);
+    removeLoader();
+  }, 12000);
+
+  const init = async () => {
+    try {
+      console.log("🟦 INIT_START");
+      const { data, error: sessionError } = await withTimeout(supabase.auth.getSession(), "AUTH_SESSION");
+      console.log("🟦 AUTH_SESSION_RETURNED", { hasSession: !!data?.session, sessionError });
+
+      if (sessionError) throw sessionError;
+
+      const s = data?.session;
+      if (s) {
+        console.log("🟦 SESSION_OK", { userId: s.user?.id, email: s.user?.email });
+        setSession(s);
+        await loadUserData(s.user.id, s.user.email!);
+        console.log("🟩 LOAD_USER_DATA_DONE");
+      } else if (!isSupabaseConfigured) {
+        throw new Error("DEMO_REQUIRED");
+      } else {
+        console.log("🟦 NO_SESSION");
+        setLoading(false);
+        removeLoader();
       }
-    };
-    init();
-  }, []);
+    } catch (e: any) {
+      console.error("🛡️ INIT_FAILED:", e?.message || e);
+      if (e.message === "DEMO_REQUIRED" || !isSupabaseConfigured) {
+        setDemoMode(true);
+        const demoUser = MOCK_USERS[1];
+        setCurrentUser(demoUser);
+        setSession({ user: demoUser });
+        setLoading(false);
+        removeLoader();
+      } else {
+        setError(e?.message || String(e));
+        setLoading(false);
+        removeLoader();
+      }
+    } finally {
+      clearTimeout(hardStop);
+      console.log("🟦 INIT_FINALLY");
+    }
+  };
+
+  init();
+}, []);
+
 
   const handleEnroll = async (sId: string, code?: string) => {
     try {
