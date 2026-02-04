@@ -12,7 +12,7 @@ export enum EnrollmentStatus {
 }
 
 export interface Profile {
-  id: string; // uuid de auth.users
+  id: string; 
   full_name: string;
   role: UserRole;
   course_id?: string;
@@ -25,15 +25,9 @@ export interface User {
   profile: Profile;
 }
 
-export interface School {
-  id: string;
-  name: string;
-  level: string;
-}
-
 export interface EnrollmentRequest {
   id: string;
-  user_id: string; // Cambiado de student_id a user_id
+  user_id: string; 
   subject_id: string;
   status: EnrollmentStatus;
 }
@@ -48,6 +42,13 @@ export interface Assessment {
   date: string;
 }
 
+// Fixed: Added missing School interface to support SCHOOLS array in data.ts
+export interface School {
+  id: string;
+  name: string;
+  level: string;
+}
+
 export interface Course {
   id: string | number;
   school_id: string | number;
@@ -56,8 +57,6 @@ export interface Course {
   division: string;
   orientation?: string;
   name?: string;
-  year_label?: string;
-  is_active?: boolean;
 }
 
 export interface Subject {
@@ -104,21 +103,8 @@ export interface DBUnit {
   subject_id: number;
   unit_number: number;
   title: string;
-  content_json: UnitPedagogicalContent;
+  content_json: any;
 }
-
-export interface UnitPedagogicalContent {
-  description: string;
-  pdfBaseUrl: string;
-  pdfPrintUrl: string;
-  blocks: BlockPedagogicalContent[];
-  metadata: {
-    version: string;
-    updated_at: string;
-  };
-}
-
-export type BlockPedagogicalContent = BlockContent;
 
 export enum BlockType {
   UMBRAL = 'UMBRAL',
