@@ -22,9 +22,10 @@ const CampusHome: React.FC<CampusHomeProps> = ({
   const isTeacher = userRole === UserRole.TEACHER;
 
   // Use a return type that explicitly includes the possibility of a partial object for teachers
-  const getStatus = (subjectId: string): EnrollmentRequest | { status: EnrollmentStatus } | undefined => {
+  const getStatus = (subjectId: string | number): EnrollmentRequest | { status: EnrollmentStatus } | undefined => {
+    const sId = String(subjectId);
     if (isTeacher) return { status: EnrollmentStatus.APPROVED };
-    return enrollRequests.find(r => r.subject_id === subjectId);
+    return enrollRequests.find(r => r.subject_id === sId);
   };
 
   return (
@@ -74,7 +75,7 @@ const CampusHome: React.FC<CampusHomeProps> = ({
               <div 
                 key={subject.id}
                 className={`group relative bg-white border rounded-2xl p-6 transition-all flex flex-col justify-between h-56 ${canEnter ? 'border-slate-200 hover:border-slate-400 hover:shadow-md cursor-pointer' : 'border-slate-100'}`}
-                onClick={() => canEnter && onSelectSubject(subject.id)}
+                onClick={() => canEnter && onSelectSubject(String(subject.id))}
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -108,7 +109,7 @@ const CampusHome: React.FC<CampusHomeProps> = ({
                     <>
                       {status === EnrollmentStatus.NONE && (
                         <button 
-                          onClick={(e) => { e.stopPropagation(); onEnroll(subject.id); }}
+                          onClick={(e) => { e.stopPropagation(); onEnroll(String(subject.id)); }}
                           className="w-full py-2 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-colors"
                         >
                           Solicitar Inscripción
@@ -135,7 +136,7 @@ const CampusHome: React.FC<CampusHomeProps> = ({
                         <div className="space-y-2">
                           <p className="text-[10px] text-rose-500 leading-tight">Solicitud rechazada. Revisá si elegiste la materia correcta.</p>
                           <button 
-                            onClick={(e) => { e.stopPropagation(); onEnroll(subject.id); }}
+                            onClick={(e) => { e.stopPropagation(); onEnroll(String(subject.id)); }}
                             className="w-full py-2 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-200 transition-colors"
                           >
                             Solicitar nuevamente
