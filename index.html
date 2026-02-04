@@ -6,46 +6,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus · Cuaderno Vivo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #0f172a; /* Azul medianoche profundo */
-            --bg-surface: #1e293b; /* Azul acero */
-            --bg-card: #334155; /* Slate 700 para tarjetas */
-            --text-main: #f1f5f9;
-            --text-dim: #94a3b8;
-            --border-subtle: #334155;
-            --accent: #38bdf8; /* Celeste brillante para focos */
+            /* Paleta Deep Steel & Sky */
+            --bg-deep: #020617; 
+            --bg-surface: #0f172a; 
+            --bg-card: #1e293b; 
+            --text-main: #f8fafc;
+            --text-dim: #64748b;
+            --accent: #38bdf8; 
+            --border-glow: rgba(56, 189, 248, 0.15);
         }
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-deep);
             color: var(--text-main);
-            transition: background-color 0.3s ease;
+            margin: 0;
+            padding: 0;
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
         .serif {
             font-family: 'Lora', serif;
         }
-        .glass-panel {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
-        }
         .card-surface {
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--bg-surface);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 15px 35px -12px rgba(0,0,0,0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Personalización de scrollbars */
+        .card-surface:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 25px 50px -12px rgba(56, 189, 248, 0.1);
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glow);
+        }
+        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-deep); }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
         @media print {
             .no-print { display: none !important; }
             body { background: white !important; color: black !important; }
-            .unit-block { break-inside: avoid; border: 1px solid #eee !important; color: black !important; }
+            .unit-block { break-inside: avoid; border: 1px solid #eee !important; color: black !important; padding: 20px; }
         }
     </style>
 <script type="importmap">
