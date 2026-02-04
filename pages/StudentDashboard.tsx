@@ -11,7 +11,7 @@ interface StudentDashboardProps {
 }
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, progress, assessments, onSelectSubject }) => {
-  const userSubjects = SUBJECTS.filter(s => s.courses.includes(user.profile.course_id || ''));
+  const userSubjects = SUBJECTS.filter(s => s.courses?.includes(user.profile.course_id || ''));
 
   return (
     <div className="space-y-10 pb-20">
@@ -32,12 +32,13 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, progress, ass
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {userSubjects.map(subject => {
               const subjectProgress = progress.filter(p => p.subject_id === subject.id);
-              const percent = subject.units_count > 0 ? (subjectProgress.length / (subject.units_count * 10)) * 100 : 0; // Estimación simple
+              const unitsCount = subject.units_count || 0;
+              const percent = unitsCount > 0 ? (subjectProgress.length / (unitsCount * 10)) * 100 : 0; // Estimación simple
               
               return (
                 <button 
                   key={subject.id}
-                  onClick={() => onSelectSubject(subject.id)}
+                  onClick={() => onSelectSubject(String(subject.id))}
                   className="bg-white border border-slate-200 p-5 rounded-2xl text-left hover:border-slate-900 transition-all group"
                 >
                   <h3 className="font-bold text-slate-800 group-hover:text-slate-900 transition-colors mb-4">{subject.name}</h3>
