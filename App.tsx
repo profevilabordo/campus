@@ -85,15 +85,15 @@ const App: React.FC = () => {
   const handleEnroll = async (subjectId: string) => {
     if (!currentUser) return;
     try {
+      // FIX: Quitamos .select().single() para evitar conflictos de schema cache con student_id inexistente
       const { error } = await supabase.from('enrollments').insert({
-        user_id: currentUser.id, // Columna correcta
+        user_id: currentUser.id,
         subject_id: subjectId,
         status: EnrollmentStatus.PENDING
       });
       
       if (error) throw error;
       
-      // Recargar solicitudes para asegurar consistencia
       const { data: enrolls } = await supabase.from('enrollments').select('*');
       setEnrollRequests(enrolls || []);
       alert("Solicitud enviada correctamente.");
@@ -167,7 +167,7 @@ const App: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Cargando Campus...</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center bg-[#0a0a0c] text-slate-400 font-bold uppercase tracking-widest text-xs">Cargando Ecosistema...</div>;
   if (!session) return <Auth onSession={(s) => { setSession(s); fetchAllData(s.user); }} />;
 
   const currentEnrollStatus = enrollRequests.find(r => 
@@ -230,7 +230,7 @@ const App: React.FC = () => {
       <div className="fixed bottom-6 right-6 no-print">
         <button 
           onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
-          className="bg-slate-900 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all border-4 border-white"
+          className="bg-slate-100 text-slate-900 p-4 rounded-full shadow-2xl hover:scale-110 transition-all border-4 border-[#0a0a0c]"
         >
           {currentUser?.profile.role === UserRole.TEACHER ? (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
