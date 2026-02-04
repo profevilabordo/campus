@@ -3,39 +3,36 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-const mountApp = () => {
+const startApp = () => {
   const rootElement = document.getElementById('root');
   const loader = document.getElementById('fallback-loader');
 
-  if (!rootElement) return;
+  // Función inmediata para liberar la pantalla
+  const clearLoader = () => {
+    if (loader) {
+      loader.style.opacity = '0';
+      setTimeout(() => loader.remove(), 300);
+    }
+  };
+
+  if (!rootElement) {
+    console.error("Critical: Root not found");
+    return;
+  }
 
   try {
     const root = ReactDOM.createRoot(rootElement);
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
-
-    // En producción, queremos que el loader desaparezca lo antes posible
-    const removeLoader = () => {
-      if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.remove(), 500);
-      }
-    };
-
-    if (document.readyState === 'complete') {
-      removeLoader();
-    } else {
-      window.addEventListener('load', removeLoader);
-    }
-
-  } catch (error) {
-    console.error("Mount Error:", error);
-    // Si falla el render, removemos el loader para ver el mensaje de error de App o el watchdog.
-    if (loader) loader.remove();
+    root.render(<App />);
+    
+    // En cuanto React toma el control, borramos el loader
+    // No esperamos a 'load' ni 'complete' para evitar cuellos de botella
+    clearLoader();
+    
+  } catch (err) {
+    console.error("Mount error:", err);
+    clearLoader();
+    rootElement.innerHTML = `<div style="color:white; padding:20px; font-family:sans-serif;">Error al iniciar: ${err}</div>`;
   }
 };
 
-mountApp();
+startApp();
