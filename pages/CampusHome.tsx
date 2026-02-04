@@ -1,19 +1,29 @@
 
 import React, { useState } from 'react';
 import { SUBJECTS } from '../data';
-import { EnrollmentRequest, EnrollmentStatus } from '../types';
+import { EnrollmentRequest, EnrollmentStatus, UserRole } from '../types';
 
 interface CampusHomeProps {
+  userRole?: UserRole;
   enrollRequests: EnrollmentRequest[];
   onSelectSubject: (id: string) => void;
   onEnroll: (subjectId: string) => void;
   onCancelEnroll: (requestId: string) => void;
 }
 
-const CampusHome: React.FC<CampusHomeProps> = ({ enrollRequests, onSelectSubject, onEnroll, onCancelEnroll }) => {
+const CampusHome: React.FC<CampusHomeProps> = ({ 
+  userRole, 
+  enrollRequests, 
+  onSelectSubject, 
+  onEnroll, 
+  onCancelEnroll 
+}) => {
   const [showHowTo, setShowHowTo] = useState(false);
+  const isTeacher = userRole === UserRole.TEACHER;
 
-  const getStatus = (subjectId: string) => {
+  // Use a return type that explicitly includes the possibility of a partial object for teachers
+  const getStatus = (subjectId: string): EnrollmentRequest | { status: EnrollmentStatus } | undefined => {
+    if (isTeacher) return { status: EnrollmentStatus.APPROVED };
     return enrollRequests.find(r => r.subject_id === subjectId);
   };
 
@@ -58,65 +68,87 @@ const CampusHome: React.FC<CampusHomeProps> = ({ enrollRequests, onSelectSubject
           {SUBJECTS.map((subject) => {
             const req = getStatus(subject.id);
             const status = req?.status || EnrollmentStatus.NONE;
+            const canEnter = status === EnrollmentStatus.APPROVED || isTeacher;
 
             return (
               <div 
                 key={subject.id}
-                className={`group relative bg-white border rounded-2xl p-6 transition-all flex flex-col justify-between h-56 ${status === EnrollmentStatus.APPROVED ? 'border-slate-200 hover:border-slate-400 hover:shadow-md cursor-pointer' : 'border-slate-100'}`}
-                onClick={() => status === EnrollmentStatus.APPROVED && onSelectSubject(subject.id)}
+                className={`group relative bg-white border rounded-2xl p-6 transition-all flex flex-col justify-between h-56 ${canEnter ? 'border-slate-200 hover:border-slate-400 hover:shadow-md cursor-pointer' : 'border-slate-100'}`}
+                onClick={() => canEnter && onSelectSubject(subject.id)}
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{subject.units_count} Unidades</span>
-                    {status === EnrollmentStatus.PENDING && (
-                      <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[9px] font-bold uppercase tracking-tighter rounded border border-amber-100 animate-pulse">Pendiente</span>
-                    )}
-                    {status === EnrollmentStatus.DENIED && (
-                      <span className="px-2 py-0.5 bg-rose-50 text-rose-600 text-[9px] font-bold uppercase tracking-tighter rounded border border-rose-100">Rechazada</span>
-                    )}
-                    {status === EnrollmentStatus.APPROVED && (
-                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-bold uppercase tracking-tighter rounded border border-emerald-100">Aprobada</span>
+                    {isTeacher ? (
+                      <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold uppercase tracking-tighter rounded border border-slate-200">Acceso Docente</span>
+                    ) : (
+                      <>
+                        {status === EnrollmentStatus.PENDING && (
+                          <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[9px] font-bold uppercase tracking-tighter rounded border border-amber-100 animate-pulse">Pendiente</span>
+                        )}
+                        {status === EnrollmentStatus.DENIED && (
+                          <span className="px-2 py-0.5 bg-rose-50 text-rose-600 text-[9px] font-bold uppercase tracking-tighter rounded border border-rose-100">Rechazada</span>
+                        )}
+                        {status === EnrollmentStatus.APPROVED && (
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-bold uppercase tracking-tighter rounded border border-emerald-100">Aprobada</span>
+                        )}
+                      </>
                     )}
                   </div>
                   <h3 className="text-xl font-bold text-slate-800 leading-snug">{subject.name}</h3>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-slate-50">
-                  {status === EnrollmentStatus.NONE && (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); onEnroll(subject.id); }}
-                      className="w-full py-2 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-colors"
-                    >
-                      Solicitar Inscripción
-                    </button>
-                  )}
-                  {status === EnrollmentStatus.PENDING && (
-                    <div className="space-y-2">
-                      <p className="text-[10px] text-amber-600 italic leading-tight">Tu solicitud está siendo revisada. En breve vas a recibir una respuesta.</p>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); onCancelEnroll(req!.id); }}
-                        className="text-[10px] font-bold text-slate-400 uppercase hover:text-rose-500 transition-colors"
-                      >
-                        Cancelar solicitud
-                      </button>
-                    </div>
-                  )}
-                  {status === EnrollmentStatus.DENIED && (
-                    <div className="space-y-2">
-                      <p className="text-[10px] text-rose-500 leading-tight">Solicitud rechazada. Revisá si elegiste la materia correcta.</p>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); onEnroll(subject.id); }}
-                        className="w-full py-2 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-200 transition-colors"
-                      >
-                        Solicitar nuevamente
-                      </button>
-                    </div>
-                  )}
-                  {status === EnrollmentStatus.APPROVED && (
+                  {isTeacher ? (
                     <div className="flex items-center justify-between group">
-                      <span className="text-xs font-bold text-slate-900">Ingresar</span>
+                      <span className="text-xs font-bold text-slate-900">Ver Contenidos</span>
                       <svg className="w-5 h-5 text-slate-300 group-hover:translate-x-1 group-hover:text-slate-900 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                     </div>
+                  ) : (
+                    <>
+                      {status === EnrollmentStatus.NONE && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onEnroll(subject.id); }}
+                          className="w-full py-2 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-colors"
+                        >
+                          Solicitar Inscripción
+                        </button>
+                      )}
+                      {status === EnrollmentStatus.PENDING && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] text-amber-600 italic leading-tight">Tu solicitud está siendo revisada. En breve vas a recibir una respuesta.</p>
+                          <button 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              // Check if req exists and has an id before calling onCancelEnroll
+                              if (req && 'id' in req) {
+                                onCancelEnroll(req.id); 
+                              }
+                            }}
+                            className="text-[10px] font-bold text-slate-400 uppercase hover:text-rose-500 transition-colors"
+                          >
+                            Cancelar solicitud
+                          </button>
+                        </div>
+                      )}
+                      {status === EnrollmentStatus.DENIED && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] text-rose-500 leading-tight">Solicitud rechazada. Revisá si elegiste la materia correcta.</p>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onEnroll(subject.id); }}
+                            className="w-full py-2 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-200 transition-colors"
+                          >
+                            Solicitar nuevamente
+                          </button>
+                        </div>
+                      )}
+                      {status === EnrollmentStatus.APPROVED && (
+                        <div className="flex items-center justify-between group">
+                          <span className="text-xs font-bold text-slate-900">Ingresar</span>
+                          <svg className="w-5 h-5 text-slate-300 group-hover:translate-x-1 group-hover:text-slate-900 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
