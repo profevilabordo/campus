@@ -1,55 +1,50 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-
-/**
- * Extracción de variables de entorno ultra-segura para producción.
- * Evita el uso directo de 'process' que puede romper el hilo de ejecución.
- */
-const env = {
-  URL: '',
-  KEY: ''
-};
-
-try {
-  // @ts-ignore - Intento via Vite/Vercel standard
-  env.URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || "";
-  // @ts-ignore
-  env.KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || "";
-
-  // Intento via global window (algunos inyectores de Vercel)
-  if (!env.URL && typeof window !== 'undefined') {
-    // @ts-ignore
-    env.URL = window._env_?.SUPABASE_URL || "";
-    // @ts-ignore
-    env.KEY = window._env_?.SUPABASE_ANON_KEY || "";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus · Cuaderno Vivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-deep: #020617; --accent: #38bdf8; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-deep); color: #f8fafc; margin: 0; padding: 0; }
+        #fallback-loader {
+            position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; background-color: var(--bg-deep); transition: opacity 0.5s ease-out;
+        }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(56, 189, 248, 0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+    <script>
+        // Watchdog: Si en 4 segundos React no ha limpiado el loader, lo forzamos.
+        // Esto evita que el usuario se quede atrapado en la pantalla de carga.
+        setTimeout(function() {
+            var loader = document.getElementById('fallback-loader');
+            if (loader) {
+                console.warn("🛡️ Watchdog: Forzando remoción del cargador por timeout.");
+                loader.style.opacity = '0';
+                setTimeout(function() { loader.remove(); }, 500);
+            }
+        }, 4000);
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
   }
-} catch (e) {
-  console.warn("🛡️ Supabase: Error silencioso al leer env vars.");
 }
-
-export const isSupabaseConfigured = env.URL.length > 5 && env.KEY.length > 5;
-
-/**
- * Senior Resiliency Pattern: 
- * Si no hay Supabase, exportamos un cliente "ficticio" (NoOp) 
- * para que App.tsx no rompa al intentar llamar a métodos.
- */
-const mockClient = new Proxy({}, {
-  get: () => () => ({
-    select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }), order: () => Promise.resolve({ data: [], error: null }) }), order: () => Promise.resolve({ data: [], error: null }) }),
-    insert: () => Promise.resolve({ data: null, error: null }),
-    upsert: () => Promise.resolve({ data: null, error: null }),
-    update: () => ({ eq: () => Promise.resolve({ data: null, error: null }) }),
-    auth: {
-      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      signOut: () => Promise.resolve(),
-      signInWithPassword: () => Promise.resolve({ data: {}, error: null }),
-      signUp: () => Promise.resolve({ data: {}, error: null })
-    }
-  })
-});
-
-export const supabase = isSupabaseConfigured 
-  ? createClient(env.URL, env.KEY)
-  : mockClient as any;
+</script>
+</head>
+<body>
+    <div id="fallback-loader">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; font-size: 10px; font-weight: 900; letter-spacing: 0.4em; color: var(--accent); text-transform: uppercase;">Iniciando Campus...</p>
+    </div>
+    <div id="root"></div>
+</body>
+</html>
