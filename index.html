@@ -9,17 +9,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #0a0a0c;
-            --bg-surface: #161618;
-            --text-main: #d1d5db;
-            --text-dim: #9ca3af;
-            --border-subtle: #26262a;
+            --bg-deep: #050505;
+            --bg-surface: #121214;
+            --bg-card: #1a1a1c;
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border-subtle: #2a2a2c;
+            --accent: #f8fafc;
         }
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-deep);
             color: var(--text-main);
             transition: background-color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
         }
         .serif {
             font-family: 'Lora', serif;
@@ -28,7 +31,11 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
         }
-        /* Personalización de scrollbars para el editor */
+        .card-surface {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+        }
+        /* Personalización de scrollbars */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-deep); }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
