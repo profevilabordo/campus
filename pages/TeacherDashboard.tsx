@@ -65,7 +65,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ subjects, units, en
             <option value="">Todos los cursos</option>
             {COURSES.map(c => (
               <option key={c.id} value={c.id}>
-                {c.grade_level || c.grade_level_id} "{c.division}" - {c.orientation || 'Técnica'}
+                {c.grade_level} "{c.division}" - {c.orientation || 'Común'}
               </option>
             ))}
           </select>
@@ -93,59 +93,6 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ subjects, units, en
           Admisiones {pendingRequests.length > 0 && <span className="bg-rose-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">{pendingRequests.length}</span>}
         </button>
       </div>
-
-      {/* VISTA: ADMISIONES */}
-      {activeTab === 'enrollments' && (
-        <section className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-100">
-            <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Gestión de Inscripciones</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Estudiante</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Asignatura</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Estado</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {enrollRequests.length > 0 ? enrollRequests.map(req => {
-                  const student = MOCK_USERS.find(u => u.id === req.user_id);
-                  const subject = subjects.find(s => String(s.id) === String(req.subject_id));
-                  return (
-                    <tr key={req.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-800">{student?.profile.full_name || 'Estudiante'}</div>
-                        <div className="text-[10px] text-slate-400">{student?.email}</div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-600">{subject?.name || req.subject_id}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-tighter rounded border ${
-                          req.status === EnrollmentStatus.PENDING ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                          req.status === EnrollmentStatus.APPROVED ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                          'bg-rose-50 text-rose-600 border-rose-100'
-                        }`}>
-                          {req.status === EnrollmentStatus.PENDING ? 'Pendiente' : req.status === EnrollmentStatus.APPROVED ? 'Aprobado' : 'Rechazado'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => onUpdateEnrollRequest(req.id, EnrollmentStatus.APPROVED)} className="px-3 py-1 bg-emerald-600 text-white text-[9px] font-bold uppercase rounded hover:bg-emerald-700 transition-colors">Aprobar</button>
-                          <button onClick={() => onUpdateEnrollRequest(req.id, EnrollmentStatus.DENIED)} className="px-3 py-1 bg-rose-50 text-rose-600 text-[9px] font-bold uppercase rounded border border-rose-100 hover:bg-rose-100 transition-colors">Denegar</button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                }) : (
-                  <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">No hay solicitudes registradas.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
 
       {/* VISTA: CONTENIDOS (Carga de JSON) */}
       {activeTab === 'progress' && (
@@ -189,11 +136,6 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ subjects, units, en
               </div>
             </section>
           ))}
-          {subjects.length === 0 && (
-            <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-               <p className="text-slate-400 italic">No se encontraron asignaturas. Cargá una unidad mediante "Carga Libre".</p>
-            </div>
-          )}
         </div>
       )}
 
@@ -209,19 +151,19 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ subjects, units, en
                 <tr className="bg-slate-50 border-b border-slate-100">
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Estudiante</th>
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Curso</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Avance Estimado</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Perfil</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Avance</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {students.length > 0 ? students.map(student => (
+                {students.map(student => (
                   <tr key={student.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-800">{student.profile.full_name}</div>
                       <div className="text-[10px] text-slate-400">{student.email}</div>
                     </td>
                     <td className="px-6 py-4">
-                       <span className="text-[10px] font-bold text-slate-500 uppercase">{student.profile.course_id}</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">{student.profile.course_id}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -230,12 +172,51 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ subjects, units, en
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-[10px] font-bold text-slate-900 hover:underline uppercase tracking-widest">Ver Seguimiento</button>
+                      <button className="text-[10px] font-bold text-slate-900 hover:underline uppercase tracking-widest">Ver Perfil</button>
                     </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">No hay estudiantes registrados en este curso.</td></tr>
-                )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* VISTA: ADMISIONES */}
+      {activeTab === 'enrollments' && (
+        <section className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-slate-100">
+            <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Gestión de Inscripciones</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Estudiante</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Asignatura</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {enrollRequests.map(req => {
+                  const student = MOCK_USERS.find(u => u.id === req.user_id);
+                  const subject = subjects.find(s => String(s.id) === String(req.subject_id));
+                  return (
+                    <tr key={req.id}>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-slate-800">{student?.profile.full_name || 'Estudiante'}</div>
+                        <div className="text-[10px] text-slate-400">{student?.email}</div>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{subject?.name || req.subject_id}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => onUpdateEnrollRequest(req.id, EnrollmentStatus.APPROVED)} className="px-3 py-1 bg-emerald-600 text-white text-[9px] font-bold uppercase rounded">Aprobar</button>
+                          <button onClick={() => onUpdateEnrollRequest(req.id, EnrollmentStatus.DENIED)} className="px-3 py-1 bg-rose-50 text-rose-600 text-[9px] font-bold uppercase rounded border border-rose-100">Denegar</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
