@@ -8,28 +8,36 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-deep: #0a0a0c;
+            --bg-surface: #161618;
+            --text-main: #d1d5db;
+            --text-dim: #9ca3af;
+            --border-subtle: #26262a;
+        }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            transition: background-color 0.3s ease;
         }
         .serif {
             font-family: 'Lora', serif;
         }
+        .glass-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+        }
+        /* Personalización de scrollbars para el editor */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+
         @media print {
-            .no-print {
-                display: none !important;
-            }
-            .print-only {
-                display: block !important;
-            }
-            body {
-                background-color: white !important;
-            }
-            .unit-block {
-                break-inside: avoid;
-                border: 1px solid #e2e8f0 !important;
-                margin-bottom: 2rem !important;
-            }
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .unit-block { break-inside: avoid; border: 1px solid #eee !important; color: black !important; }
         }
     </style>
 <script type="importmap">
@@ -42,10 +50,8 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
