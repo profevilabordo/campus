@@ -9,13 +9,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #050505;
-            --bg-surface: #121214;
-            --bg-card: #1a1a1c;
-            --text-main: #e2e8f0;
+            --bg-deep: #0f172a; /* Azul medianoche profundo */
+            --bg-surface: #1e293b; /* Azul acero */
+            --bg-card: #334155; /* Slate 700 para tarjetas */
+            --text-main: #f1f5f9;
             --text-dim: #94a3b8;
-            --border-subtle: #2a2a2c;
-            --accent: #f8fafc;
+            --border-subtle: #334155;
+            --accent: #38bdf8; /* Celeste brillante para focos */
         }
         body {
             font-family: 'Inter', sans-serif;
@@ -30,16 +30,17 @@
         .glass-panel {
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
         }
         .card-surface {
             background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         /* Personalización de scrollbars */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-deep); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #444; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
         @media print {
             .no-print { display: none !important; }
