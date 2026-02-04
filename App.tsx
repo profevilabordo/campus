@@ -25,7 +25,6 @@ const App: React.FC = () => {
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Escuchar cambios en la sesión de Supabase
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) fetchUserProfile(session.user);
@@ -46,20 +45,18 @@ const App: React.FC = () => {
 
   const fetchUserProfile = async (authUser: any) => {
     try {
-      // Intentar obtener el perfil existente
       let { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
         .single();
 
-      // Si no existe, crearlo con rol STUDENT por defecto (POLÍTICA DE ROLES)
       if (!profile || error) {
         const newProfile: Profile = {
           id: authUser.id,
-          role: UserRole.STUDENT, // Siempre student por defecto en el registro
+          role: UserRole.STUDENT,
           full_name: authUser.email.split('@')[0],
-          course_id: 'eeso206-4d' // Curso por defecto para la demo inicial
+          course_id: 'eeso206-4d'
         };
         const { data: createdProfile, error: insertError } = await supabase
           .from('profiles')
@@ -77,10 +74,8 @@ const App: React.FC = () => {
         profile: profile as Profile
       });
 
-      // Cargar datos de progreso y evaluaciones
       fetchUserData(authUser.id);
 
-      // Redirección inicial basada en el rol literal de la base de datos
       if (profile.role === UserRole.TEACHER) {
         setView('teacher');
       } else {
@@ -95,14 +90,12 @@ const App: React.FC = () => {
   };
 
   const fetchUserData = async (userId: string) => {
-    // Obtener progreso real desde Supabase
     const { data: progressData } = await supabase
       .from('progress')
       .select('*')
       .eq('user_id', userId);
     if (progressData) setProgress(progressData);
 
-    // Obtener notas y devoluciones
     const { data: assessmentData } = await supabase
       .from('assessments')
       .select('*')
@@ -164,12 +157,10 @@ const App: React.FC = () => {
   const activeUnit = activeUnitId ? units[activeUnitId] : null;
 
   const renderContent = () => {
-    // Guardia de seguridad: Solo profesores ven el dashboard docente
     if (currentUser?.profile.role === UserRole.TEACHER && view === 'teacher') {
       return <TeacherDashboard units={units} onUpdateUnit={(u) => setUnits(prev => ({...prev, [u.id]: u}))} />;
     }
 
-    // Panel del alumno para ver sus notas y devoluciones
     if (view === 'student') {
       return (
         <StudentDashboard 
@@ -184,7 +175,6 @@ const App: React.FC = () => {
       );
     }
 
-    // Vistas comunes o de navegación de contenidos
     switch (view) {
       case 'home':
         return (
@@ -233,7 +223,6 @@ const App: React.FC = () => {
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Conectado como {currentUser?.profile.role}</span>
         </div>
         <div className="flex gap-2">
-          {/* Botón contextual de acceso al dashboard según rol */}
           <button 
             onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
             className="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase hover:bg-slate-800 transition-colors"
