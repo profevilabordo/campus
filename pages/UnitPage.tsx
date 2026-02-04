@@ -25,7 +25,7 @@ const UnitPage: React.FC<UnitPageProps> = ({ unit, progress, onUpdateProgress, o
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 truncate">Economía / Unidad {unit.number}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 truncate">Unidad {unit.number} / {unit.title}</span>
             </div>
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
               <div 
