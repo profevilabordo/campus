@@ -74,7 +74,10 @@ useEffect(() => {
   // Fix: useMemo result typing
   const unitsMap = useMemo(() => {
     const map: Record<string, Unit> = { ...UNIT_CONTENT };
-    dbUnits.forEach(u => {
+    
+    const dbUnitsList = Array.isArray(dbUnits) ? dbUnits : Object.values(dbUnits || {});
+    dbUnitsList.forEach((u: any) => {
+
       map[u.id] = {
         id: u.id,
         subject_id: String(u.subject_id),
