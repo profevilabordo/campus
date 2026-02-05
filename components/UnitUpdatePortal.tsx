@@ -74,7 +74,14 @@ const UnitUpdatePortal: React.FC<UnitUpdatePortalProps> = ({ currentUnit, availa
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Materia</label>
                 <select value={selectedSubjectId} onChange={(e) => setSelectedSubjectId(e.target.value)} className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-sky-500">
-                  {availableSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {availableSubjects.map(s => {subjects
+  .filter(s => s)
+  .map(s => (
+    <option key={s.id} value={s.id}>
+      {s.name}
+    </option>
+))}
+)}
                 </select>
               </div>
               <div className="space-y-2">
