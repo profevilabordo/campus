@@ -23,6 +23,7 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
   ]);
 }
 
+
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -41,6 +42,34 @@ const App: React.FC = () => {
   const [view, setView] = useState<'home' | 'subject' | 'unit' | 'teacher' | 'student'>('home');
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
+useEffect(() => {
+  if (!isSupabaseConfigured) return;
+
+  const loadUnitsFromSupabase = async () => {
+    const { data, error } = await supabase
+      .from('units')
+      .select('content_json');
+
+    if (error) {
+      console.error('Error cargando unidades desde Supabase:', error);
+      return;
+    }
+
+    if (!data || data.length === 0) return;
+
+    const unitsMap: Record<string, any> = {};
+    for (const row of data) {
+      const unit = row.content_json;
+      if (unit?.id) {
+        unitsMap[unit.id] = unit;
+      }
+    }
+
+    setDbUnits(unitsMap);
+  };
+
+  loadUnitsFromSupabase();
+}, []);
 
   // Fix: useMemo result typing
   const unitsMap = useMemo(() => {
@@ -108,10 +137,11 @@ const App: React.FC = () => {
     isFetchingProfile.current = true;
 
     try {
-      const { data: prof, error: profError } = await withTimeout(
+      const profRes = await withTimeout(
         supabase.from('profiles').select('*').eq('id', userId).single(),
         "AUTH_PROFILE_SELECT"
       );
+const { data: prof, error: profError } = profRes as unknown as { data: any; error: any };
 
       let finalProfile: Profile;
 
@@ -123,10 +153,13 @@ const App: React.FC = () => {
             full_name: email.split('@')[0], 
             role: UserRole.STUDENT 
           };
-          const { error: upsertError } = await withTimeout(
+            const upsertRes = await withTimeout(
+
             supabase.from('profiles').upsert(newProf),
             "AUTH_PROFILE_UPSERT"
           );
+          const { error: upsertError } = upsertRes as unknown as { error: any };
+
           if (upsertError) {
             console.error("AUTH_PROFILE_UPSERT_FAILED", upsertError);
             throw upsertError;
@@ -146,7 +179,10 @@ const App: React.FC = () => {
 
       const fetchSafe = async (label: string, query: any) => {
         try {
-          const { data, error: fetchErr } = await withTimeout(query, label);
+const fetchRes = await withTimeout(query, label);
+
+const { data, error: fetchErr } = fetchRes as unknown as { data: any; error: any };
+
           if (fetchErr) {
             console.warn(`${label}_FAILED_NON_CRITICAL`, fetchErr.message);
             return [];
@@ -198,7 +234,13 @@ useEffect(() => {
   const init = async () => {
     try {
       console.log("🟦 INIT_START");
-      const { data, error: sessionError } = await withTimeout(supabase.auth.getSession(), "AUTH_SESSION");
+const sessionRes = await withTimeout(
+  supabase.auth.getSession(),
+  "AUTH_SESSION"
+);
+
+const { data, error: sessionError } = sessionRes as unknown as { data: any; error: any };
+
       console.log("🟦 AUTH_SESSION_RETURNED", { hasSession: !!data?.session, sessionError });
 
       if (sessionError) throw sessionError;
@@ -252,7 +294,8 @@ useEffect(() => {
         }]);
         return;
       }
-      const { error: enrollErr } = await withTimeout(
+        const enrollRes = await withTimeout(
+
         supabase.from('enrollment_requests').upsert({ 
           student_id: currentUser.id, 
           course_id: sId,
@@ -261,6 +304,8 @@ useEffect(() => {
         }),
         "ENROLLMENT_INSERT"
       );
+      const { error: enrollErr } = enrollRes as unknown as { error: any };
+
       if (enrollErr) throw enrollErr;
       await loadUserData(currentUser.id, currentUser.email);
     } catch (err: any) {
@@ -310,7 +355,8 @@ useEffect(() => {
           subject={subjects.find(s => String(s.id) === activeSubjectId)!} 
           isApproved={isApproved(activeSubjectId)} 
           userCourseId={currentUser?.profile.course_id} 
-          availableUnits={Object.values(unitsMap).filter(u => String(u.subject_id) === activeSubjectId)} 
+          availableUnits={Object.values(unitsMap).filter((u: any) => String(u.subject_id) === activeSubjectId)}
+ 
           onSelectUnit={(id) => { setActiveUnitId(id); setView('unit'); }} 
           onBack={() => setView('home')} 
         />

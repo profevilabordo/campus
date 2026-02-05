@@ -1,3 +1,4 @@
+import { supabase } from '../supabase';
 
 import React, { useState } from 'react';
 import { Unit, Subject } from '../types';
@@ -34,26 +35,52 @@ const UnitUpdatePortal: React.FC<UnitUpdatePortalProps> = ({ currentUnit, availa
 
   const [error, setError] = useState<string | null>(null);
 
-  const handleValidateAndApply = () => {
-    try {
-      const pedagogicalContent = JSON.parse(jsonText);
-      if (!unitTitle) throw new Error("Título de unidad obligatorio.");
-      const finalUnit: Unit = {
-        id: `${selectedSubjectId}_u${unitNumber}`,
-        subject_id: selectedSubjectId,
-        number: unitNumber,
-        title: unitTitle,
-        description: pedagogicalContent.description,
-        blocks: pedagogicalContent.blocks,
-        metadata: pedagogicalContent.metadata,
-        pdfBaseUrl: pedagogicalContent.pdfBaseUrl,
-        pdfPrintUrl: pedagogicalContent.pdfPrintUrl
-      };
-      onUpdate(finalUnit);
-    } catch (e: any) {
-      setError("Error en JSON: " + e.message);
-    }
-  };
+  const saveUnitToSupabase = async (unit: Unit) => {
+  const { error } = await supabase
+    .from('units')
+    .upsert({
+      id: unit.id,
+      subject_id: unit.subject_id,   // string tipo "economia"
+      number: unit.number,
+      title: unit.title,
+      content_json: unit,            // jsonb completo
+      updated_at: new Date().toISOString()
+    });
+
+  if (error) throw error;
+};
+
+  const handleValidateAndApply = async () => {
+  try {
+    setError(null);
+
+    const pedagogicalContent = JSON.parse(jsonText);
+    if (!unitTitle) throw new Error("Título de unidad obligatorio.");
+
+    const finalUnit: Unit = {
+      id: `${selectedSubjectId}_${unitNumber}`, // ej: "economia_1"
+      subject_id: selectedSubjectId,
+      number: unitNumber,
+      title: unitTitle,
+      description: pedagogicalContent.description,
+      isAvailable: true,
+      blocks: pedagogicalContent.blocks,
+      metadata: pedagogicalContent.metadata,
+      pdfBaseUrl: pedagogicalContent.pdfBaseUrl,
+      pdfPrintUrl: pedagogicalContent.pdfPrintUrl
+    };
+
+    // ✅ guarda global
+    await saveUnitToSupabase(finalUnit);
+
+    // mantiene tu flujo actual (por si querés reflejar cambios al toque en UI)
+    onUpdate(finalUnit);
+
+  } catch (e: any) {
+    setError("Error: " + (e?.message || String(e)));
+  }
+};
+
 
   return (
     <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[150] flex items-center justify-center p-6">
@@ -73,16 +100,20 @@ const UnitUpdatePortal: React.FC<UnitUpdatePortalProps> = ({ currentUnit, availa
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Materia</label>
-                <select value={selectedSubjectId} onChange={(e) => setSelectedSubjectId(e.target.value)} className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-sky-500">
-                  {availableSubjects.map(s => {subjects
-  .filter(s => s)
-  .map(s => (
-    <option key={s.id} value={s.id}>
-      {s.name}
-    </option>
-))}
-)}
-                </select>
+                <select
+  value={selectedSubjectId}
+  onChange={(e) => setSelectedSubjectId(e.target.value)}
+  className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-sky-500"
+>
+  {availableSubjects
+    .filter(Boolean)
+    .map((s) => (
+      <option key={s.id} value={String(s.id)}>
+        {s.name}
+      </option>
+    ))}
+</select>
+
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Unidad N°</label>
