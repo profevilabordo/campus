@@ -28,7 +28,7 @@ serve(async (req) => {
       <div style="background-color: white; padding: 40px; border-radius: 0 0 20px 20px; border: 1px solid #e2e8f0; border-top: none;">
         <h1 style="color: #0f172a; font-size: 20px; margin-bottom: 20px;">Hola, ${profile.full_name} 👋</h1>
         <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-          Notamos que solicitaste inscribirte a la asignatura <strong>${subject.name}</strong>. 
+          Notamos que solicitaste inscribirte a la asignatura <strong>${subject?.name ?? '—'}</strong>. 
         </p>
         <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
           Tu solicitud fue marcada como <strong>rechazada</strong>. No te preocupes, esto suele suceder por un error de clic o porque elegiste una materia que no corresponde a tu curso o división actual.
@@ -49,7 +49,7 @@ serve(async (req) => {
     </div>
   `
 
-  console.log(`Enviando email a ${profile.full_name} por rechazo en ${subject.name}`)
+  console.log(`Enviando email a ${profile.full_name} por rechazo en ${subject?.name ?? '—'}`)
 
   // Aquí iría la lógica de envío real (Resend, SendGrid, etc.)
   // return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } })

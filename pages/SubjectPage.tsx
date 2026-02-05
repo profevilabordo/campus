@@ -22,7 +22,7 @@ const SubjectPage: React.FC<SubjectPageProps> = ({ subject, isApproved, userCour
           Regresar al Ecosistema
         </button>
         <div>
-          <h1 className="text-5xl font-black text-white leading-none tracking-tight">{subject.name}</h1>
+          <h1 className="text-5xl font-black text-white leading-none tracking-tight">{subject?.name ?? '—'}</h1>
           <p className="text-xl text-slate-400 serif italic mt-4">Trayectoria pedagógica y materiales de estudio.</p>
         </div>
       </header>

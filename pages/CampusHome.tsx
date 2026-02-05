@@ -60,7 +60,7 @@ const CampusHome: React.FC<CampusHomeProps> = ({
                     )}
                   </div>
                 </div>
-                <h3 className="text-3xl font-black text-white leading-tight tracking-tight mb-4">{subject.name}</h3>
+                <h3 className="text-3xl font-black text-white leading-tight tracking-tight mb-4">{subject?.name ?? '—'}</h3>
               </div>
 
               <div className="mt-8 pt-8 border-t border-slate-700/50">

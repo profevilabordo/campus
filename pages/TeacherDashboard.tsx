@@ -79,7 +79,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         <div className="space-y-20">
           {subjects.map(subject => (
             <section key={subject.id} className="space-y-10">
-              <h3 className="font-black text-white uppercase tracking-widest text-sm bg-slate-700/50 px-6 py-2 rounded-full border border-slate-600 inline-block">{subject.name}</h3>
+              <h3 className="font-black text-white uppercase tracking-widest text-sm bg-slate-700/50 px-6 py-2 rounded-full border border-slate-600 inline-block">{subject?.name ?? '—'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {Array.from({ length: 3 }).map((_, i) => {
                   const unitNum = i + 1;

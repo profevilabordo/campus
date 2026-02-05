@@ -45,7 +45,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, progress, ass
                   className="card-surface p-8 rounded-[2rem] text-left hover:border-white transition-all group relative overflow-hidden"
                 >
                   <div className="relative z-10">
-                    <h3 className="font-black text-white text-xl mb-6 leading-tight group-hover:text-sky-400 transition-colors">{subject.name}</h3>
+                    <h3 className="font-black text-white text-xl mb-6 leading-tight group-hover:text-sky-400 transition-colors">{subject?.name ?? '—'}</h3>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
                         <span>Recorrido de lectura</span>
