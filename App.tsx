@@ -49,7 +49,7 @@ const App: React.FC = () => {
       map[u.id] = {
         id: u.id,
         subject_id: String(u.subject_id),
-        number: u.unit_number,
+        number: u.number,
         title: u.title,
         description: u.content_json?.description || '',
         blocks: u.content_json?.blocks || [],
@@ -79,7 +79,7 @@ const App: React.FC = () => {
         setDbUnits([...dbUnits, { 
           id: newUnit.id, 
           subject_id: Number(newUnit.subject_id) || 0, 
-          unit_number: newUnit.number, 
+          number: newUnit.number,
           title: newUnit.title, 
           content_json: newUnit 
         } as any]);
@@ -90,7 +90,7 @@ const App: React.FC = () => {
       const { error: updateError } = await supabase.from('units').upsert({
         id: newUnit.id,
         subject_id: newUnit.subject_id,
-        unit_number: newUnit.number,
+        number: newUnit.number,
         title: newUnit.title,
         content_json: newUnit
       });
