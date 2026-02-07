@@ -254,40 +254,26 @@ const App: React.FC = () => {
     init();
   }, []);
 
- const handleEnroll = async (code: string) => {
+ const handleEnroll = async (subjectId: string) => {
   try {
     if (!currentUser) return;
 
-    // 1) buscar materia por código
-    const { data: subj, error: subjErr } = await supabase
-      .from("subjects")
-      .select("id")
-      .eq("enrollment_code", code)
-      .maybeSingle();
-
-    if (subjErr) throw subjErr;
-    if (!subj) {
-      alert("Código inválido.");
-      return;
-    }
-
-    // 2) insertar solicitud
     const { error } = await supabase
       .from("enrollment_requests")
       .insert({
         user_id: currentUser.id,
-        subject_id: subj.id,
-        status: "pending",
+        subject_id: Number(subjectId),
+        status: "pending"
       });
 
     if (error) throw error;
 
     await loadUserData(currentUser.id, currentUser.email);
-    alert("Solicitud enviada ✅");
   } catch (err: any) {
     alert(`Error al inscribirse: ${err.message}`);
   }
 };
+
 
 
   if (error) {
