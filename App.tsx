@@ -297,26 +297,56 @@ if (needsProfile) {
  const handleEnroll = async (subjectId: string) => {
   if (!currentUser) return;
 
-  try {
-    const { error } = await supabase
-      .from('enrollment_requests')
-      .insert({
+  // ✅ 1) Feedback inmediato en UI (PENDIENTE)
+  setEnrollRequests(prev => {
+    const already = prev.some(r =>
+      String(r.user_id) === String(currentUser.id) &&
+      String(r.subject_id) === String(subjectId)
+    );
+    if (already) return prev;
+
+    return [
+      ...prev,
+      {
+        id: 'local-' + Math.random().toString(16).slice(2),
         user_id: currentUser.id,
         subject_id: Number(subjectId),
-        status: 'pending'
-      });
+        status: 'pending',
+        created_at: new Date().toISOString()
+      }
+    ];
+  });
+
+  setToast('✅ Solicitud recibida. En breve serás notificado.');
+
+  try {
+    const payload = {
+      user_id: currentUser.id,
+      subject_id: Number(subjectId),
+      status: 'pending'
+    };
+
+    const { error } = await supabase
+      .from('enrollment_requests')
+      .upsert(payload, { onConflict: 'user_id,subject_id' });
 
     if (error) throw error;
 
-    // Recargar datos para que la tarjeta cambie a PENDIENTE
+    // ✅ 2) Sincroniza con BD (por si el docente ya aprobó, etc.)
     await loadUserData(currentUser.id, currentUser.email);
-
-    setToast("Solicitud recibida. En breve será notificado.");
   } catch (err: any) {
-    console.error(err);
-    setToast("Hubo un problema al enviar la solicitud.");
+    console.error('ENROLL_FAILED', err?.message);
+
+    // si falló, revertimos el "optimistic"
+    setEnrollRequests(prev =>
+      prev.filter(r => !(String(r.user_id) === String(currentUser.id) && String(r.subject_id) === String(subjectId)))
+    );
+
+    setToast('❌ No se pudo enviar la solicitud.');
   }
 };
+
+
 
 
 
@@ -421,7 +451,13 @@ if (needsProfile) {
 {view === 'profile' && (
   <CompleteProfile
     user={currentUser!}
-    onComplete={() => setView('student')}
+    onComplete={async () => {
+      if (currentUser) {
+        await loadUserData(currentUser.id, currentUser.email);
+          }
+        setView('student');
+}}
+
   />
 )}
 
