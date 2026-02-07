@@ -11,14 +11,19 @@ interface UnitPageProps {
 }
 
 const UnitPage: React.FC<UnitPageProps> = ({ unit, progress, onUpdateProgress, onBack }) => {
-  const visitedIds = progress.filter((p) => p.visited).map((p) => p.block_id);
+  const visitedSet = new Set(
+  progress
+    .filter((p) => p.visited)
+    .map((p) => String(p.block_id))
+);
+
 
   // ✅ Blindaje + orden por "order"
   const safeBlocks = Array.isArray((unit as any).blocks) ? (unit as any).blocks : [];
   const sortedBlocks = [...safeBlocks].sort((a: any, b: any) => (a?.order ?? 999) - (b?.order ?? 999));
 
   const totalBlocks = sortedBlocks.length || 1;
-  const visitedCount = visitedIds.length;
+const visitedCount = visitedSet.size;
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("es-AR", {
@@ -158,15 +163,31 @@ const UnitPage: React.FC<UnitPageProps> = ({ unit, progress, onUpdateProgress, o
         </header>
 
         <section className="max-w-3xl mx-auto">
-          {sortedBlocks.map((block: any, index: number) => (
-            <BlockCard
-              key={block.id ?? index}
-              index={index}
-              block={block}
-              isVisited={visitedIds.includes(block.id)}
-              onToggleVisit={() => onUpdateProgress(block.id)}
-            />
-          ))}
+         {sortedBlocks.map((block: any, index: number) => {
+  const blockId = String(block?.id ?? ""); // normalizado
+
+  // Si no hay id, no podemos trackear progreso (mejor verlo ya)
+  if (!blockId) {
+    console.warn("Bloque sin id:", block);
+  }
+
+  return (
+    <BlockCard
+      key={blockId || index}
+      index={index}
+      block={block}
+      isVisited={blockId ? visitedSet.has(blockId) : false}
+      onToggleVisit={() => {
+        if (!blockId) {
+          alert("Este bloque no tiene id. No se puede marcar como realizado.");
+          return;
+        }
+        onUpdateProgress(blockId);
+      }}
+    />
+  );
+})}
+
         </section>
 
         <section className="max-w-3xl mx-auto pt-12 text-center border-t border-white/5 no-print">
