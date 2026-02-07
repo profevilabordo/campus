@@ -268,11 +268,15 @@ const App: React.FC = () => {
 
     if (error) throw error;
 
+    alert("✅ Solicitud recibida. En breve tu docente la revisará y vas a ser notificado/a.");
+
     await loadUserData(currentUser.id, currentUser.email);
   } catch (err: any) {
     alert(`Error al inscribirse: ${err.message}`);
   }
 };
+
+
 
 
 
