@@ -18,6 +18,8 @@ import SubjectPage from './pages/SubjectPage';
 import UnitPage from './pages/UnitPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
+import CompleteProfile from './pages/CompleteProfile';
+
 
 
 const TIMEOUT_MS = 10000;
@@ -32,6 +34,18 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
 }
 
 const App: React.FC = () => {
+  const isProfileComplete = (p: any) => {
+  return (
+    p &&
+    String(p.first_name || '').trim() &&
+    String(p.last_name || '').trim() &&
+    String(p.dni || '').trim() &&
+    p.birth_date &&
+    String(p.address || '').trim() &&
+    String(p.city || '').trim()
+  );
+};
+
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
     if (!toast) return;
@@ -147,11 +161,23 @@ const App: React.FC = () => {
 
       if (profError) {
         if (profError.code === 'PGRST116') {
-          const newProf = {
-            id: userId,
-            full_name: email.split('@')[0],
-            role: UserRole.STUDENT
-          };
+          const newProf: any = {
+  id: userId,
+  role: UserRole.STUDENT,      // ✅ fijo, nadie lo elige
+
+  // ✅ nuevos campos de perfil (se completan luego)
+  first_name: '',
+  last_name: '',
+  dni: '',
+  birth_date: null,            // lo completan en "Completar Perfil"
+  address: '',
+  city: '',
+  phone: null,
+
+  // si tu Profile tiene course_id:
+  course_id: null
+};
+
 
           const upsertRes = await withTimeout(
             supabase.from('profiles').upsert(newProf),
@@ -171,6 +197,13 @@ const App: React.FC = () => {
 
       setCurrentUser({ id: userId, email, profile: finalProfile });
       const isTeacher = finalProfile.role === UserRole.TEACHER;
+
+      const needsProfile = !isTeacher && !isProfileComplete(finalProfile);
+
+if (needsProfile) {
+  setView('profile');
+}
+
 
       const fetchSafe = async (label: string, query: any) => {
         try {
@@ -385,6 +418,12 @@ const App: React.FC = () => {
         onUpdateUnit={handleUpdateUnit}
       />
     )}
+{view === 'profile' && (
+  <CompleteProfile
+    user={currentUser!}
+    onComplete={() => setView('student')}
+  />
+)}
 
     {view === 'student' && (
       <StudentDashboard
