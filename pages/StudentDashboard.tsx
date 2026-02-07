@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 import { User, Subject, ProgressRecord, Assessment } from '../types';
-import { SUBJECTS } from '../data';
+
 
 interface StudentDashboardProps {
   user: User;
+  subjects: Subject[];
   progress: ProgressRecord[];
   assessments: Assessment[];
   onSelectSubject: (id: string) => void;
 }
 
-const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, progress, assessments, onSelectSubject }) => {
+const StudentDashboard: React.FC<StudentDashboardProps> = ({
+  user,
+  subjects,
+  progress,
+  assessments,
+  onSelectSubject
+}) => {
+
   const [enrollCode, setEnrollCode] = useState('');
-  const userSubjects = SUBJECTS.filter(s => s.courses?.includes(user.profile.course_id || ''));
+ const userSubjects = subjects.filter(s =>
+  s.courses?.includes(user.profile.course_id || '')
+);
 
   return (
     <div className="space-y-10 pb-20">
@@ -86,7 +96,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, progress, ass
                   <span className="text-[10px] font-black uppercase tracking-widest text-sky-400 bg-sky-400/10 px-3 py-1 rounded-full">{assessment.type}</span>
                   <span className="text-2xl font-black text-white">{assessment.grade}</span>
                 </div>
-                <h4 className="font-bold text-white text-sm mb-4 leading-snug">{SUBJECTS.find(s => s.id === assessment.subject_id)?.name}</h4>
+                <h4 className="font-bold text-white text-sm mb-4 leading-snug">{subjects.find(s => s.id === assessment.subject_id)?.name}</h4>
                 <p className="text-xs text-slate-400 serif leading-relaxed italic border-l-2 border-slate-700 pl-4 py-1">
                   "{assessment.feedback}"
                 </p>

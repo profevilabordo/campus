@@ -372,6 +372,7 @@ const App: React.FC = () => {
       {view === 'student' && (
         <StudentDashboard
           user={currentUser!}
+          subjects={subjects}
           progress={userProgress.filter(p => p.user_id === currentUser?.id)}
           assessments={assessments}
           onSelectSubject={(id) => {
