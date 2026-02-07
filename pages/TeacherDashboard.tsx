@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { UserRole, Unit, EnrollmentRequest, EnrollmentStatus, Subject, ProgressRecord, Profile } from '../types';
 import UnitUpdatePortal from '../components/UnitUpdatePortal';
 
+
+
 interface TeacherDashboardProps {
   subjects: Subject[];
   units: Record<string, Unit>;
@@ -22,6 +24,15 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onUpdateEnrollRequest, 
   onUpdateUnit 
 }) => {
+  const profileById = new Map<string, Profile>(
+  profiles.map((p: Profile) => [String(p.id), p])
+);
+
+
+  return (
+    <div>...</div>
+  );
+
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');
   const [updatingUnitId, setUpdatingUnitId] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -169,24 +180,55 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700">
-              {pendingRequests.map(req => {
-                const student = profiles.find(p => p.id === req.user_id);
-                const subject = subjects.find(s => String(s.id) === String(req.subject_id));
-                return (
-                  <tr key={req.id}>
-                    <td className="px-10 py-10">
-                      <div className="font-bold text-white text-lg">{student?.full_name || "Alumno Desconocido"}</div>
-                    </td>
-                    <td className="px-10 py-10 text-xs font-black text-sky-400 uppercase tracking-widest">{subject?.name || req.subject_id}</td>
-                    <td className="px-10 py-10 text-right">
-                      <div className="flex justify-end gap-4">
-                        <button onClick={() => onUpdateEnrollRequest(req.id, EnrollmentStatus.APPROVED)} className="bg-sky-500 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Aprobar</button>
-                        <button onClick={() => onUpdateEnrollRequest(req.id, EnrollmentStatus.DENIED)} className="bg-rose-900/40 text-rose-400 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-rose-800/50">Rechazar</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+           {pendingRequests.map(req => {
+  const prof = profileById.get(String(req.user_id));
+  const subject = subjects.find(s => String(s.id) === String(req.subject_id));
+
+  const fullName = prof
+    ? `${String(prof.first_name || '').trim()} ${String(prof.last_name || '').trim()}`.trim()
+    : '';
+
+  const dni = String((prof as any)?.dni || '').trim();
+  const city = String((prof as any)?.city || '').trim();
+
+  const line2 = [dni ? `DNI ${dni}` : '', city].filter(Boolean).join(' · ');
+
+  return (
+    <tr key={req.id}>
+      <td className="px-10 py-10">
+        <div className="font-bold text-white text-lg">
+          {fullName || 'Perfil incompleto'}
+        </div>
+        {line2 && (
+          <div className="text-slate-400 text-xs mt-1">{line2}</div>
+        )}
+      </td>
+
+      <td className="px-10 py-10 text-xs font-black text-sky-400 uppercase tracking-widest">
+        {subject?.name || req.subject_id}
+      </td>
+
+      <td className="px-10 py-10 text-right">
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={() => onUpdateEnrollRequest(req.id, EnrollmentStatus.APPROVED)}
+            className="bg-sky-500 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
+          >
+            Aprobar
+          </button>
+          <button
+            onClick={() => onUpdateEnrollRequest(req.id, EnrollmentStatus.DENIED)}
+            className="bg-rose-900/40 text-rose-400 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-rose-800/50"
+          >
+            Rechazar
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+})}
+
+
               {pendingRequests.length === 0 && (
                 <tr><td colSpan={3} className="px-10 py-32 text-center text-slate-500 serif italic text-xl">Sin admisiones pendientes.</td></tr>
               )}

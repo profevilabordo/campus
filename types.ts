@@ -12,12 +12,17 @@ export enum EnrollmentStatus {
 }
 
 export interface Profile {
-  id: string; 
-  full_name: string;
-  role: UserRole;
-  course_id?: string;
-  created_at?: string;
+  id: string;
+  role: string;
+  first_name?: string;
+  last_name?: string;
+  dni?: string;
+  birth_date?: string;
+  address?: string;
+  city?: string;
+  phone?: string;
 }
+
 
 export interface User {
   id: string;
