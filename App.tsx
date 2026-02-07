@@ -451,7 +451,40 @@ if (loading || !minLoaderDone) return <BootScreen />;
       String(r.user_id) === String(currentUser?.id) &&
       r.status === 'approved'
   );
+const handleUpdateProgress = (blockId: string) => {
+  if (!currentUser?.id) return;
 
+  const uid = String(currentUser.id);
+  const unitId = String(activeUnitId);
+  const bid = String(blockId).trim();
+
+  setUserProgress((prev) => {
+    const idx = prev.findIndex(
+      (p) =>
+        String(p.user_id) === uid &&
+        String(p.unit_id) === unitId &&
+        String(p.block_id).trim() === bid
+    );
+
+    // Si existe, toggle visited
+    if (idx !== -1) {
+      const next = [...prev];
+      next[idx] = { ...next[idx], visited: !next[idx].visited };
+      return next;
+    }
+
+    // Si no existe, lo crea como visitado
+    return [
+      ...prev,
+      {
+        user_id: uid,
+        unit_id: unitId,
+        block_id: bid,
+        visited: true,
+      },
+    ];
+  });
+};
 
   return (
   <Layout
@@ -492,14 +525,18 @@ if (loading || !minLoaderDone) return <BootScreen />;
       />
     )}
 
-    {view === 'unit' && activeUnitId && (
-      <UnitPage
-        unit={unitsMap[String(activeUnitId)]}
-        progress={userProgress.filter(p => String(p.user_id) === String(currentUser?.id))}
-        onUpdateProgress={() => {}}
-        onBack={() => setView('subject')}
-      />
+    {view === "unit" && activeUnitId && (
+  <UnitPage
+    unit={unitsMap[String(activeUnitId)]}
+    progress={userProgress.filter(
+      (p) =>
+        String(p.user_id) === String(currentUser?.id) &&
+        String(p.unit_id) === String(activeUnitId)
     )}
+    onUpdateProgress={handleUpdateProgress}
+    onBack={() => setView("subject")}
+  />
+)}
 
     {view === 'teacher' && (
       <TeacherDashboard

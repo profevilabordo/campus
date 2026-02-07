@@ -163,32 +163,28 @@ const visitedCount = visitedSet.size;
         </header>
 
         <section className="max-w-3xl mx-auto">
-         {sortedBlocks.map((block: any, index: number) => {
-  const blockId = String(block?.id ?? ""); // normalizado
+  {sortedBlocks.map((block: any, index: number) => {
+    const blockId = String(block?.id ?? "");
 
-  // Si no hay id, no podemos trackear progreso (mejor verlo ya)
-  if (!blockId) {
-    console.warn("Bloque sin id:", block);
-  }
+    return (
+      <BlockCard
+        key={blockId || index}
+        index={index}
+        block={block}
+        isVisited={blockId ? visitedSet.has(blockId) : false}
+        onToggleVisit={() => {
+          console.log("[UnitPage] click toggle ->", { blockId, had: visitedSet.has(blockId) });
+          if (!blockId) {
+            alert("Este bloque no tiene id. No se puede marcar como realizado.");
+            return;
+          }
+          onUpdateProgress(blockId);
+        }}
+      />
+    );
+  })}
+</section>
 
-  return (
-    <BlockCard
-      key={blockId || index}
-      index={index}
-      block={block}
-      isVisited={blockId ? visitedSet.has(blockId) : false}
-      onToggleVisit={() => {
-        if (!blockId) {
-          alert("Este bloque no tiene id. No se puede marcar como realizado.");
-          return;
-        }
-        onUpdateProgress(blockId);
-      }}
-    />
-  );
-})}
-
-        </section>
 
         <section className="max-w-3xl mx-auto pt-12 text-center border-t border-white/5 no-print">
           <div
