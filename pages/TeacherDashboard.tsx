@@ -29,9 +29,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 );
 
 
-  return (
-    <div>...</div>
-  );
+
 
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');
   const [updatingUnitId, setUpdatingUnitId] = useState<string | null>(null);
