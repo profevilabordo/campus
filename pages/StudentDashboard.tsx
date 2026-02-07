@@ -96,10 +96,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 );
 
               const status = req?.status ?? null; // 'pending' | 'approved' | 'denied' | null
-              const isApproved = status === 'approved';
-              const isPending = status === 'pending';
-              const isDenied = status === 'denied'; 
-            
+              
+              const denied = req?.status === 'denied';             
               const approved = req?.status === 'approved';
               const pending = req?.status === 'pending';
 
@@ -111,20 +109,23 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
               const percent = Math.min(100, (subjectProgress.length / (unitsCount * 5)) * 100);
 
               const cardStyle = approved ? styleApproved : pending ? stylePending : styleLocked;
+return (
+  <div
+    key={subject.id}
+    className={`${cardBase} ${cardStyle}`}
+    onClick={() => {
+      // ✅ deja entrar si está aprobado O pendiente
+      if (approved || pending) onSelectSubject(String(subject.id));
+    }}
+    role="button"
+    tabIndex={0}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' && (approved || pending)) {
+        onSelectSubject(String(subject.id));
+      }
+    }}
+  >
 
-              return (
-                <div
-                  key={subject.id}
-                  className={`${cardBase} ${cardStyle}`}
-                  onClick={() => {
-                    if (approved) onSelectSubject(String(subject.id));
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && approved) onSelectSubject(String(subject.id));
-                  }}
-                >
                   {/* Badges */}
                   <div className="flex items-center justify-between mb-8">
                     <span
