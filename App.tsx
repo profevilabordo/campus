@@ -254,27 +254,26 @@ const App: React.FC = () => {
     init();
   }, []);
 
-  const handleEnroll = async (sId: string, code?: string) => {
-    try {
-      if (!currentUser) return;
+ const handleEnroll = async (sId: string) => {
+  try {
+    if (!currentUser) return;
 
-      const enrollRes = await withTimeout(
-        supabase.from('enrollment_requests').upsert({
-          student_id: currentUser.id,
-          course_id: sId,
-          enrollment_code: code || '',
-          status: 'pending'
-        }),
-        'ENROLLMENT_INSERT'
-      );
-      const { error: enrollErr } = enrollRes as unknown as { error: any };
-      if (enrollErr) throw enrollErr;
+    const { error } = await supabase
+      .from('enrollment_requests')
+      .insert({
+        user_id: currentUser.id,
+        subject_id: Number(sId), // 👈 importante
+        status: 'pending'
+      });
 
-      await loadUserData(currentUser.id, currentUser.email);
-    } catch (err: any) {
-      alert(`Error al inscribirse: ${err.message}`);
-    }
-  };
+    if (error) throw error;
+
+    await loadUserData(currentUser.id, currentUser.email);
+  } catch (err: any) {
+    alert(`Error al inscribirse: ${err.message}`);
+  }
+};
+
 
   if (error) {
     return (
