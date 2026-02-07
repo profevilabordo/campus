@@ -372,6 +372,8 @@ const App: React.FC = () => {
         <StudentDashboard
           user={currentUser!}
           subjects={subjects}
+          enrollRequests={enrollRequests}     // 👈 nuevo
+          onEnroll={handleEnroll}             // 👈 nuevo 
           progress={userProgress.filter(p => p.user_id === currentUser?.id)}
           assessments={assessments}
           onSelectSubject={(id) => {
