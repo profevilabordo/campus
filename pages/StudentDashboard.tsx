@@ -177,15 +177,20 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 className="flex-1 bg-black/50 border border-slate-700 rounded-xl px-4 text-white font-mono text-sm tracking-widest outline-none focus:border-sky-500"
               />
               <button
-                onClick={() => {
-                  // si por ahora no usás código, podés ignorarlo
-                  // acá yo lo mando igual para futuro
-                  onEnroll(String(user.profile.course_id || ''), enrollCode);
-                }}
-                className="bg-white text-black px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-sky-400 transition-all"
-              >
-                Solicitar
-              </button>
+  type="button"
+  onClick={() => {
+    if (!enrollCode.trim()) {
+      alert("Ingresá un código.");
+      return;
+    }
+    onEnroll(enrollCode.trim());
+    setEnrollCode("");
+  }}
+  className="bg-white text-black px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-sky-400 transition-all"
+>
+  Solicitar
+</button>
+
             </div>
           </div>
         </section>
