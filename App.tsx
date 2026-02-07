@@ -19,6 +19,7 @@ import UnitPage from './pages/UnitPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 
+
 const TIMEOUT_MS = 10000;
 
 async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
@@ -31,6 +32,12 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
 }
 
 const App: React.FC = () => {
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
   // ✅ Guard: si no hay config, no llamamos supabase
   if (!isSupabaseConfigured) {
     return (
@@ -255,26 +262,29 @@ const App: React.FC = () => {
   }, []);
 
  const handleEnroll = async (subjectId: string) => {
-  try {
-    if (!currentUser) return;
+  if (!currentUser) return;
 
+  try {
     const { error } = await supabase
-      .from("enrollment_requests")
+      .from('enrollment_requests')
       .insert({
         user_id: currentUser.id,
         subject_id: Number(subjectId),
-        status: "pending"
+        status: 'pending'
       });
 
     if (error) throw error;
 
-    alert("✅ Solicitud recibida. En breve tu docente la revisará y vas a ser notificado/a.");
-
+    // Recargar datos para que la tarjeta cambie a PENDIENTE
     await loadUserData(currentUser.id, currentUser.email);
+
+    setToast("Solicitud recibida. En breve será notificado.");
   } catch (err: any) {
-    alert(`Error al inscribirse: ${err.message}`);
+    console.error(err);
+    setToast("Hubo un problema al enviar la solicitud.");
   }
 };
+
 
 
 
@@ -315,109 +325,122 @@ const App: React.FC = () => {
     );
 
   return (
-    <Layout
-      user={currentUser}
-      onLogout={() => {
+  <Layout
+    user={currentUser}
+    onLogout={() => {
+      // si no hay supabase configurado, evitamos crashear
+      try {
         supabase.auth.signOut().then(() => window.location.reload());
-      }}
-    >
-      {view === 'home' && (
-        <CampusHome
-          userRole={currentUser?.profile.role}
-          subjects={subjects}
-          enrollRequests={enrollRequests
-            .filter(r => r.student_id === currentUser?.id)
-            .map(r => ({ ...r, user_id: r.student_id, subject_id: r.course_id }))}
-          onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }}
-          onEnroll={(id) => handleEnroll(id)}
-          onCancelEnroll={() => {}}
-        />
-      )}
+      } catch {
+        window.location.reload();
+      }
+    }}
+  >
+    {view === 'home' && (
+      <CampusHome
+        userRole={currentUser?.profile.role}
+        subjects={subjects}
+        enrollRequests={enrollRequests.filter(r => String(r.user_id) === String(currentUser?.id))}
+        onSelectSubject={(id) => { setActiveSubjectId(String(id)); setView('subject'); }}
+        onEnroll={(id) => handleEnroll(String(id))}
+        onCancelEnroll={() => {}}
+      />
+    )}
 
-      {view === 'subject' && activeSubjectId && (
-        <SubjectPage
-          subject={subjects.find(s => String(s.id) === activeSubjectId)!}
-          isApproved={isApproved(activeSubjectId)}
-          userCourseId={currentUser?.profile.course_id}
-          availableUnits={Object.values(unitsMap).filter((u: any) =>
-            String(u.subject_id) === activeSubjectId && (u.isAvailable ?? true)
-          )}
-          onSelectUnit={(id) => { setActiveUnitId(id); setView('unit'); }}
-          onBack={() => setView('home')}
-        />
-      )}
+    {view === 'subject' && activeSubjectId && (
+      <SubjectPage
+        subject={subjects.find(s => String(s.id) === String(activeSubjectId))!}
+        isApproved={isApproved(String(activeSubjectId))}
+        userCourseId={currentUser?.profile.course_id}
+        availableUnits={Object.values(unitsMap).filter((u: any) =>
+          String(u.subject_id) === String(activeSubjectId) && (u.isAvailable ?? true)
+        )}
+        onSelectUnit={(id) => { setActiveUnitId(String(id)); setView('unit'); }}
+        onBack={() => setView('home')}
+      />
+    )}
 
-      {view === 'unit' && activeUnitId && (
-        <UnitPage
-          unit={unitsMap[activeUnitId]}
-          progress={userProgress.filter(p => p.user_id === currentUser?.id)}
-          onUpdateProgress={() => {}}
-          onBack={() => setView('subject')}
-        />
-      )}
+    {view === 'unit' && activeUnitId && (
+      <UnitPage
+        unit={unitsMap[String(activeUnitId)]}
+        progress={userProgress.filter(p => String(p.user_id) === String(currentUser?.id))}
+        onUpdateProgress={() => {}}
+        onBack={() => setView('subject')}
+      />
+    )}
 
-      {view === 'teacher' && (
-        <TeacherDashboard
-          subjects={subjects}
-          units={unitsMap}
-          enrollRequests={enrollRequests.map(r => ({ ...r, user_id: r.student_id, subject_id: r.course_id }))}
-          progressRecords={userProgress}
-          profiles={allProfiles}
-          onUpdateEnrollRequest={async (id, status) => {
-            await supabase.from('enrollment_requests').update({ status }).eq('id', id);
-            if (currentUser) {
-              await loadUserData(currentUser.id, currentUser.email);
-            }
-          }}
-          onUpdateUnit={handleUpdateUnit}
-        />
-      )}
+    {view === 'teacher' && (
+      <TeacherDashboard
+        subjects={subjects}
+        units={unitsMap}
+        enrollRequests={enrollRequests}   // ✅ sin map raro
+        progressRecords={userProgress}
+        profiles={allProfiles}
+        onUpdateEnrollRequest={async (id, status) => {
+          await supabase.from('enrollment_requests').update({ status }).eq('id', id);
+          if (currentUser) {
+            await loadUserData(currentUser.id, currentUser.email);
+          }
+        }}
+        onUpdateUnit={handleUpdateUnit}
+      />
+    )}
 
-      {view === 'student' && (
-        <StudentDashboard
-          user={currentUser!}
-          subjects={subjects}
-          enrollRequests={enrollRequests}     // 👈 nuevo
-          onEnroll={handleEnroll}             // 👈 nuevo 
-          progress={userProgress.filter(p => p.user_id === currentUser?.id)}
-          assessments={assessments}
-          onSelectSubject={(id) => {
-            const raw = String(id);
-            const isNumeric = /^\d+$/.test(raw);
-            if (isNumeric) {
-              setActiveSubjectId(raw);
-              setView('subject');
-              return;
-            }
+    {view === 'student' && (
+      <StudentDashboard
+        user={currentUser!}
+        subjects={subjects}
+        enrollRequests={enrollRequests}   // ✅ real
+        onEnroll={handleEnroll}           // ✅ real
+        progress={userProgress.filter(p => String(p.user_id) === String(currentUser?.id))}
+        assessments={assessments}
+        onSelectSubject={(id) => {
+          const raw = String(id);
+          const isNumeric = /^\d+$/.test(raw);
 
-            const normalize = (s: string) =>
-              s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-
-            const wanted = normalize(raw);
-            const found = subjects.find((s: any) => normalize(String(s.name || '')) === wanted);
-
-            if (!found) {
-              setActiveSubjectId(raw);
-              setView('subject');
-              return;
-            }
-
-            setActiveSubjectId(String(found.id));
+          if (isNumeric) {
+            setActiveSubjectId(raw);
             setView('subject');
-          }}
-        />
-      )}
+            return;
+          }
 
-      <button
-        onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
-        className="fixed bottom-8 right-8 p-5 bg-sky-500 rounded-3xl shadow-2xl z-50 hover:scale-110 active:scale-95 transition-all border-4 border-slate-900 group"
-      >
-        <svg className="w-8 h-8 text-white group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      </button>
-    </Layout>
-  );
+          const normalize = (s: string) =>
+            s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+          const wanted = normalize(raw);
+          const found = subjects.find((s: any) => normalize(String(s.name || '')) === wanted);
+
+          if (!found) {
+            setActiveSubjectId(raw);
+            setView('subject');
+            return;
+          }
+
+          setActiveSubjectId(String(found.id));
+          setView('subject');
+        }}
+      />
+    )}
+
+    {/* FAB switch teacher/student */}
+    <button
+      onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
+      className="fixed bottom-8 right-8 p-5 bg-sky-500 rounded-3xl shadow-2xl z-50 hover:scale-110 active:scale-95 transition-all border-4 border-slate-900 group"
+    >
+      <svg className="w-8 h-8 text-white group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    </button>
+
+    {/* Toast */}
+    {toast && (
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-sky-500 text-black font-black text-xs uppercase tracking-widest px-6 py-3 rounded-2xl shadow-2xl border-4 border-slate-900 z-[999]">
+        ✅ {toast}
+      </div>
+    )}
+  </Layout>
+);
+
 };
 
 export default App;
