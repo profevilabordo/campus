@@ -1,23 +1,27 @@
 
 import React, { useState } from 'react';
-import { SUBJECTS } from '../data';
+
 import { EnrollmentRequest, EnrollmentStatus, UserRole } from '../types';
 
 interface CampusHomeProps {
   userRole?: UserRole;
+  subjects: any[]; // después lo tipamos prolijo
   enrollRequests: EnrollmentRequest[];
   onSelectSubject: (id: string) => void;
   onEnroll: (subjectId: string) => void;
   onCancelEnroll: (requestId: string) => void;
 }
 
+
 const CampusHome: React.FC<CampusHomeProps> = ({ 
-  userRole, 
+  userRole,
+  subjects,
   enrollRequests, 
   onSelectSubject, 
   onEnroll, 
   onCancelEnroll 
 }) => {
+
   const [showHowTo, setShowHowTo] = useState(false);
   const isTeacher = userRole === UserRole.TEACHER;
 
@@ -40,7 +44,8 @@ const CampusHome: React.FC<CampusHomeProps> = ({
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        {SUBJECTS.map((subject) => {
+      {(subjects || []).map((subject) => {
+
           const req = getStatus(subject.id);
           const status = req?.status || EnrollmentStatus.NONE;
           const canEnter = status === EnrollmentStatus.APPROVED || isTeacher;
