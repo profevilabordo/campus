@@ -294,10 +294,11 @@ if (needsProfile) {
     init();
   }, []);
 
- const handleEnroll = async (subjectId: string) => {
+ // 👉 Solicitar inscripción
+const handleEnroll = async (subjectId: string) => {
   if (!currentUser) return;
 
-  // ✅ 1) Feedback inmediato en UI (PENDIENTE)
+  // 1️⃣ Feedback inmediato en UI (optimistic update)
   setEnrollRequests(prev => {
     const already = prev.some(r =>
       String(r.user_id) === String(currentUser.id) &&
@@ -332,14 +333,18 @@ if (needsProfile) {
 
     if (error) throw error;
 
-    // ✅ 2) Sincroniza con BD (por si el docente ya aprobó, etc.)
+    // sincroniza con BD real
     await loadUserData(currentUser.id, currentUser.email);
+
   } catch (err: any) {
     console.error('ENROLL_FAILED', err?.message);
 
-    // si falló, revertimos el "optimistic"
+    // revertir optimistic update si falla
     setEnrollRequests(prev =>
-      prev.filter(r => !(String(r.user_id) === String(currentUser.id) && String(r.subject_id) === String(subjectId)))
+      prev.filter(r =>
+        !(String(r.user_id) === String(currentUser.id) &&
+          String(r.subject_id) === String(subjectId))
+      )
     );
 
     setToast('❌ No se pudo enviar la solicitud.');
@@ -347,11 +352,29 @@ if (needsProfile) {
 };
 
 
+// 👉 Cancelar inscripción
+const handleCancelEnroll = async (requestId: string) => {
+  if (!currentUser) return;
 
+  // 1️⃣ Actualización inmediata en UI
+  setEnrollRequests(prev =>
+    prev.filter(r => String(r.id) !== String(requestId))
+  );
 
+  try {
+    const { error } = await supabase
+      .from('enrollment_requests')
+      .delete()
+      .eq('id', requestId);
 
+    if (error) throw error;
 
+    await loadUserData(currentUser.id, currentUser.email);
 
+  } catch (err: any) {
+    alert('Error al cancelar solicitud: ' + err.message);
+  }
+};
 
   if (error) {
     return (
@@ -421,13 +444,14 @@ if (loading || !minLoaderDone) return <BootScreen />;
   if (!session) return <Auth onSession={(s) => { setSession(s); loadUserData(s.user.id, s.user.email!); }} />;
 
   const isApproved = (sId: string) =>
-    currentUser?.profile.role === UserRole.TEACHER ||
-    enrollRequests.some(
-      r =>
-        String(r.course_id) === String(sId) &&
-        r.student_id === currentUser?.id &&
-        r.status === 'approved'
-    );
+  currentUser?.profile.role === UserRole.TEACHER ||
+  enrollRequests.some(
+    r =>
+      String(r.subject_id) === String(sId) &&
+      String(r.user_id) === String(currentUser?.id) &&
+      r.status === 'approved'
+  );
+
 
   return (
   <Layout
@@ -442,14 +466,17 @@ if (loading || !minLoaderDone) return <BootScreen />;
     }}
   >
     {view === 'home' && (
-      <CampusHome
-        userRole={currentUser?.profile.role}
-        subjects={subjects}
-        enrollRequests={enrollRequests.filter(r => String(r.user_id) === String(currentUser?.id))}
-        onSelectSubject={(id) => { setActiveSubjectId(String(id)); setView('subject'); }}
-        onEnroll={(id) => handleEnroll(String(id))}
-        onCancelEnroll={() => {}}
-      />
+     <CampusHome
+  userRole={currentUser?.profile.role}
+  userId={currentUser?.id}
+  subjects={subjects}
+  enrollRequests={enrollRequests}
+  onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }}
+  onEnroll={(id) => handleEnroll(id)}
+  onCancelEnroll={handleCancelEnroll}   // 👈 ESTA ES LA CLAVE
+/>
+
+
     )}
 
     {view === 'subject' && activeSubjectId && (
