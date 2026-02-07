@@ -86,8 +86,20 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
             {userSubjects.map(subject => {
-              const req = getRequestForSubject(subject.id);
+
+              const req = enrollRequests.find(
+               (r: any) => 
+                String(r.user_id) === String(user.id) && 
+                String(r.subject_id) === String(subject.id)
+                );
+
+              const status = req?.status ?? null; // 'pending' | 'approved' | 'denied' | null
+              const isApproved = status === 'approved';
+              const isPending = status === 'pending';
+              const isDenied = status === 'denied'; 
+            
               const approved = req?.status === 'approved';
               const pending = req?.status === 'pending';
 
@@ -243,3 +255,5 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
 };
 
 export default StudentDashboard;
+
+

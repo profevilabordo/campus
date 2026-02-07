@@ -374,8 +374,50 @@ if (needsProfile) {
       </div>
     );
   }
+const BootScreen: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+      {/* glow suave */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_45%),radial-gradient(circle_at_70%_60%,rgba(99,102,241,0.10),transparent_50%)]" />
 
-  if (loading) return null;
+      <div className="relative min-h-screen flex items-center justify-center p-8">
+        <div className="text-center space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(56,189,248,0.18)]">
+            <div className="w-8 h-8 rounded-full border-4 border-sky-500/30 border-t-sky-400 animate-spin" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-white font-black text-xl tracking-tight">
+              Cargando Campus…
+            </div>
+            <div className="text-slate-400 text-sm serif italic">
+              Sincronizando materias y permisos
+            </div>
+          </div>
+
+          <div className="w-[260px] mx-auto h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+            <div className="h-full w-1/2 bg-sky-500 animate-pulse" />
+          </div>
+
+          <div className="text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">
+            Cuaderno Vivo
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+const [minLoaderDone, setMinLoaderDone] = useState(false);
+
+useEffect(() => {
+  const t = setTimeout(() => setMinLoaderDone(true), 900);
+  return () => clearTimeout(t);
+}, []);
+
+
+if (loading || !minLoaderDone) return <BootScreen />;
+
+
   if (!session) return <Auth onSession={(s) => { setSession(s); loadUserData(s.user.id, s.user.email!); }} />;
 
   const isApproved = (sId: string) =>
