@@ -11,7 +11,6 @@ import {
   Assessment
 } from './types';
 import { supabase, isSupabaseConfigured } from './supabase';
-import { SUBJECTS, MOCK_USERS, UNIT_CONTENT } from './data';
 import Layout from './components/Layout';
 import Auth from './components/Auth';
 import CampusHome from './pages/CampusHome';
@@ -22,7 +21,6 @@ import StudentDashboard from './pages/StudentDashboard';
 
 const TIMEOUT_MS = 10000;
 
-// Fix: Use function keyword instead of arrow function for generics to avoid TSX ambiguity
 async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
   return Promise.race([
     promise,
@@ -33,15 +31,28 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
 }
 
 const App: React.FC = () => {
+  // ✅ Guard: si no hay config, no llamamos supabase
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <div className="max-w-md w-full card-surface p-6 rounded-2xl">
+          <h1 className="text-white font-black text-xl uppercase tracking-tight mb-2">Config requerida</h1>
+          <p className="text-slate-300 text-sm">
+            Supabase no está configurado. Revisá las variables de entorno en Vercel (URL y ANON KEY).
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [session, setSession] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [demoMode, setDemoMode] = useState(!isSupabaseConfigured);
 
   const isFetchingProfile = useRef(false);
 
-  const [subjects, setSubjects] = useState<Subject[]>(SUBJECTS);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [dbUnits, setDbUnits] = useState<DBUnit[]>([]);
   const [enrollRequests, setEnrollRequests] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<ProgressRecord[]>([]);
@@ -52,36 +63,39 @@ const App: React.FC = () => {
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
 
-  // ✅ ÚNICA versión de unitsMap (sin duplicados)
   const unitsMap = useMemo(() => {
-  const map: Record<string, Unit> = demoMode ? { ...UNIT_CONTENT } : {};
+    const map: Record<string, Unit> = {};
 
-  (dbUnits || []).forEach((row: any) => {
-    const raw = row?.content_json ?? {};
-    const unitId = raw.id ?? row.id;
-    if (!unitId) return;
+    (dbUnits || []).forEach((row: any) => {
+      const raw = row?.content_json ?? {};
+      const unitId = raw.id ?? row.id;
+      if (!unitId) return;
 
-    const subjectId = raw.subject_id ?? row.subject_id;
-    const number = raw.number ?? row.number;
-    const title = raw.title ?? row.title;
+      const subjectId = raw.subject_id ?? row.subject_id;
+      const number = raw.number ?? row.number;
+      const title = raw.title ?? row.title;
 
-    map[String(unitId)] = {
-      id: String(unitId),
-      subject_id: String(subjectId),
-      number: Number(number) || 0,
-      title: String(title || ''),
-      description: raw.description || '',
-      isAvailable: raw.isAvailable ?? true,
-      pdfBaseUrl: raw.pdfBaseUrl || '#',
-      pdfPrintUrl: raw.pdfPrintUrl || '#',
-      metadata: raw.metadata || { version: '1.0.0', updated_at: new Date().toISOString(), change_note: '' },
-      blocks: raw.blocks || []
-    };
-  });
+      map[String(unitId)] = {
+        id: String(unitId),
+        subject_id: String(subjectId),
+        number: Number(number) || 0,
+        title: String(title || ''),
+        description: raw.description || '',
+        isAvailable: raw.isAvailable ?? true,
+        pdfBaseUrl: raw.pdfBaseUrl || '#',
+        pdfPrintUrl: raw.pdfPrintUrl || '#',
+        metadata:
+          raw.metadata || {
+            version: '1.0.0',
+            updated_at: new Date().toISOString(),
+            change_note: ''
+          },
+        blocks: raw.blocks || []
+      };
+    });
 
-  return map;
-}, [dbUnits, demoMode]);
-
+    return map;
+  }, [dbUnits]);
 
   const removeLoader = () => {
     const l = document.getElementById('fallback-loader');
@@ -91,31 +105,7 @@ const App: React.FC = () => {
     }
   };
 
-  // Fix: Define handleUpdateUnit function which was missing
   const handleUpdateUnit = async (newUnit: Unit) => {
-    if (demoMode) {
-      const exists = dbUnits.find((u: any) => u.id === newUnit.id);
-      if (exists) {
-        setDbUnits(
-          dbUnits.map((u: any) =>
-            u.id === newUnit.id ? ({ ...u, title: newUnit.title, content_json: newUnit } as any) : u
-          )
-        );
-      } else {
-        setDbUnits([
-          ...dbUnits,
-          {
-            id: newUnit.id,
-            subject_id: (newUnit as any).subject_id,
-            number: newUnit.number,
-            title: newUnit.title,
-            content_json: newUnit
-          } as any
-        ]);
-      }
-      return;
-    }
-
     try {
       const { error: updateError } = await supabase.from('units').upsert({
         id: newUnit.id,
@@ -150,7 +140,6 @@ const App: React.FC = () => {
 
       if (profError) {
         if (profError.code === 'PGRST116') {
-          console.log('AUTH_PROFILE_NOT_FOUND: Creating basic student profile...');
           const newProf = {
             id: userId,
             full_name: email.split('@')[0],
@@ -163,13 +152,9 @@ const App: React.FC = () => {
           );
           const { error: upsertError } = upsertRes as unknown as { error: any };
 
-          if (upsertError) {
-            console.error('AUTH_PROFILE_UPSERT_FAILED', upsertError);
-            throw upsertError;
-          }
+          if (upsertError) throw upsertError;
           finalProfile = newProf as any;
         } else {
-          console.error('AUTH_PROFILE_SELECT_FAILED', profError);
           throw profError;
         }
       } else {
@@ -184,14 +169,9 @@ const App: React.FC = () => {
         try {
           const fetchRes = await withTimeout(query, label);
           const { data, error: fetchErr } = fetchRes as unknown as { data: any; error: any };
-
-          if (fetchErr) {
-            console.warn(`${label}_FAILED_NON_CRITICAL`, fetchErr.message);
-            return [];
-          }
+          if (fetchErr) return [];
           return data || [];
-        } catch (e: any) {
-          console.warn(`${label}_TIMEOUT_NON_CRITICAL`, e.message);
+        } catch {
           return [];
         }
       };
@@ -215,14 +195,16 @@ const App: React.FC = () => {
         isTeacher ? fetchSafe('FETCH_PROFILES', supabase.from('profiles').select('*')) : Promise.resolve([])
       ]);
 
+      // opcional: filtra "Economía" genérica
       if (subjs.length) {
-  const cleaned = subjs.filter((s: any) => {
-    const name = String(s?.name ?? '').trim().toLowerCase();
-    // Oculta la “economía” genérica
-    return name !== 'economía' && name !== 'economia';
-  });
-  setSubjects(cleaned);
-}
+        const cleaned = subjs.filter((s: any) => {
+          const name = String(s?.name ?? '').trim().toLowerCase();
+          return name !== 'economía' && name !== 'economia';
+        });
+        setSubjects(cleaned as any);
+      } else {
+        setSubjects([]);
+      }
 
       setDbUnits(unts as any);
       setEnrollRequests(enrl);
@@ -231,7 +213,6 @@ const App: React.FC = () => {
       setAllProfiles(profs);
 
     } catch (err: any) {
-      console.error('❌ LOAD_USER_DATA_CRITICAL_FAIL:', err.message);
       setError(`Error de sincronización: ${err.message}. Por favor, reintentá.`);
     } finally {
       isFetchingProfile.current = false;
@@ -241,10 +222,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('🟦 APP_USEEFFECT_START', { isSupabaseConfigured });
-
     const hardStop = setTimeout(() => {
-      console.error('🟥 HARD_STOP_LOADING: no terminó init en 12s');
       setError('La app quedó colgada en sincronización. Abrí consola (F12) y copiá el primer error rojo.');
       setLoading(false);
       removeLoader();
@@ -252,48 +230,24 @@ const App: React.FC = () => {
 
     const init = async () => {
       try {
-        console.log('🟦 INIT_START');
-        const sessionRes = await withTimeout(
-          supabase.auth.getSession(),
-          'AUTH_SESSION'
-        );
-
+        const sessionRes = await withTimeout(supabase.auth.getSession(), 'AUTH_SESSION');
         const { data, error: sessionError } = sessionRes as unknown as { data: any; error: any };
-
-        console.log('🟦 AUTH_SESSION_RETURNED', { hasSession: !!data?.session, sessionError });
-
         if (sessionError) throw sessionError;
 
         const s = data?.session;
         if (s) {
-          console.log('🟦 SESSION_OK', { userId: s.user?.id, email: s.user?.email });
           setSession(s);
           await loadUserData(s.user.id, s.user.email!);
-          console.log('🟩 LOAD_USER_DATA_DONE');
-        } else if (!isSupabaseConfigured) {
-          throw new Error('DEMO_REQUIRED');
         } else {
-          console.log('🟦 NO_SESSION');
           setLoading(false);
           removeLoader();
         }
       } catch (e: any) {
-        console.error('🛡️ INIT_FAILED:', e?.message || e);
-        if (e.message === 'DEMO_REQUIRED' || !isSupabaseConfigured) {
-          setDemoMode(true);
-          const demoUser = MOCK_USERS[1];
-          setCurrentUser(demoUser);
-          setSession({ user: demoUser });
-          setLoading(false);
-          removeLoader();
-        } else {
-          setError(e?.message || String(e));
-          setLoading(false);
-          removeLoader();
-        }
+        setError(e?.message || String(e));
+        setLoading(false);
+        removeLoader();
       } finally {
         clearTimeout(hardStop);
-        console.log('🟦 INIT_FINALLY');
       }
     };
 
@@ -303,18 +257,6 @@ const App: React.FC = () => {
   const handleEnroll = async (sId: string, code?: string) => {
     try {
       if (!currentUser) return;
-      if (demoMode) {
-        setEnrollRequests([
-          ...enrollRequests,
-          {
-            id: 'd' + Math.random(),
-            student_id: currentUser.id,
-            course_id: sId,
-            status: EnrollmentStatus.PENDING
-          }
-        ]);
-        return;
-      }
 
       const enrollRes = await withTimeout(
         supabase.from('enrollment_requests').upsert({
@@ -326,11 +268,10 @@ const App: React.FC = () => {
         'ENROLLMENT_INSERT'
       );
       const { error: enrollErr } = enrollRes as unknown as { error: any };
-
       if (enrollErr) throw enrollErr;
+
       await loadUserData(currentUser.id, currentUser.email);
     } catch (err: any) {
-      console.error('ENROLLMENT_FAILED', err.message);
       alert(`Error al inscribirse: ${err.message}`);
     }
   };
@@ -358,7 +299,7 @@ const App: React.FC = () => {
   }
 
   if (loading) return null;
-  if (!session && !demoMode) return <Auth onSession={(s) => { setSession(s); loadUserData(s.user.id, s.user.email!); }} />;
+  if (!session) return <Auth onSession={(s) => { setSession(s); loadUserData(s.user.id, s.user.email!); }} />;
 
   const isApproved = (sId: string) =>
     currentUser?.profile.role === UserRole.TEACHER ||
@@ -373,16 +314,9 @@ const App: React.FC = () => {
     <Layout
       user={currentUser}
       onLogout={() => {
-        if (demoMode) window.location.reload();
-        else supabase.auth.signOut().then(() => window.location.reload());
+        supabase.auth.signOut().then(() => window.location.reload());
       }}
     >
-      {demoMode && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-sky-500 text-black text-[10px] font-black px-4 py-1 rounded-full border-2 border-slate-900 shadow-2xl">
-          MODO DEMO
-        </div>
-      )}
-
       {view === 'home' && (
         <CampusHome
           userRole={currentUser?.profile.role}
@@ -396,24 +330,18 @@ const App: React.FC = () => {
         />
       )}
 
-     {view === 'subject' && activeSubjectId && (
-  <>
-    {console.log("✅ activeSubjectId:", activeSubjectId)}
-    {console.log("✅ subjects ids:", subjects.map(s => s.id))}
-    {console.log("✅ units subject_ids (primeras 5):", Object.values(unitsMap).slice(0,5).map((u:any)=>u.subject_id))}
-    <SubjectPage 
-      subject={subjects.find(s => String(s.id) === activeSubjectId)!} 
-      isApproved={isApproved(activeSubjectId)} 
-      userCourseId={currentUser?.profile.course_id} 
-      availableUnits={Object.values(unitsMap).filter((u: any) =>
-        String(u.subject_id) === activeSubjectId && (u.isAvailable ?? true)
+      {view === 'subject' && activeSubjectId && (
+        <SubjectPage
+          subject={subjects.find(s => String(s.id) === activeSubjectId)!}
+          isApproved={isApproved(activeSubjectId)}
+          userCourseId={currentUser?.profile.course_id}
+          availableUnits={Object.values(unitsMap).filter((u: any) =>
+            String(u.subject_id) === activeSubjectId && (u.isAvailable ?? true)
+          )}
+          onSelectUnit={(id) => { setActiveUnitId(id); setView('unit'); }}
+          onBack={() => setView('home')}
+        />
       )}
-      onSelectUnit={(id) => { setActiveUnitId(id); setView('unit'); }} 
-      onBack={() => setView('home')} 
-    />
-  </>
-)}
-
 
       {view === 'unit' && activeUnitId && (
         <UnitPage
@@ -446,41 +374,30 @@ const App: React.FC = () => {
           user={currentUser!}
           progress={userProgress.filter(p => p.user_id === currentUser?.id)}
           assessments={assessments}
-         onSelectSubject={(id) => {
-  const raw = String(id);
+          onSelectSubject={(id) => {
+            const raw = String(id);
+            const isNumeric = /^\d+$/.test(raw);
+            if (isNumeric) {
+              setActiveSubjectId(raw);
+              setView('subject');
+              return;
+            }
 
-  // Si ya viene numérico (ej: "10"), lo usamos directo
-  const isNumeric = /^\d+$/.test(raw);
+            const normalize = (s: string) =>
+              s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
-  if (isNumeric) {
-    setActiveSubjectId(raw);
-    setView('subject');
-    return;
-  }
+            const wanted = normalize(raw);
+            const found = subjects.find((s: any) => normalize(String(s.name || '')) === wanted);
 
-  // Si viene tipo "economia" (slug), lo traducimos buscando por name
-  const normalize = (s: string) =>
-    s.toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // saca acentos
-      .trim();
+            if (!found) {
+              setActiveSubjectId(raw);
+              setView('subject');
+              return;
+            }
 
-  const wanted = normalize(raw);
-
-  const found = subjects.find((s: any) => normalize(String(s.name || '')) === wanted);
-
-  if (!found) {
-    console.warn("❌ No pude traducir subject slug -> id:", raw, "Subjects:", subjects);
-    // fallback: guardo igual lo que vino para que no reviente
-    setActiveSubjectId(raw);
-    setView('subject');
-    return;
-  }
-
-  setActiveSubjectId(String(found.id)); // <-- acá queda "10", "11", "12"
-  setView('subject');
-}}
-
+            setActiveSubjectId(String(found.id));
+            setView('subject');
+          }}
         />
       )}
 
