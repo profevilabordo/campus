@@ -16,7 +16,8 @@ const mockClient = {
     select: () => ({
       eq: () => ({
         single: () => Promise.resolve({ data: null, error: null }),
-        order: () => Promise.resolve({ data: [], error: null })
+        order: () => Promise.resolve({ data: [], error: null }),
+        maybeSingle: () => Promise.resolve({ data: null, error: null })
       }),
       order: () => Promise.resolve({ data: [], error: null })
     }),
@@ -27,6 +28,21 @@ const mockClient = {
   })
 };
 
+// Crear cliente con headers explícitos
 export const supabase = isSupabaseConfigured
-  ? createClient(URL, KEY)
+  ? createClient(URL, KEY, {
+      db: {
+        schema: 'public'
+      },
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true
+      },
+      global: {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      }
+    })
   : (mockClient as any);

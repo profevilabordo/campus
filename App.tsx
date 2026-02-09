@@ -527,68 +527,134 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
   // =========================
   // PROGRESS (local) - NOTE: hoy es local. Si querés, después lo persistimos a Supabase.
   // =========================
-const handleUpdateProgress = async (blockId: string) => {
+  
+  
+  const handleUpdateProgress = async (blockId: string) => {
+  console.log('🔵 handleUpdateProgress llamado con blockId:', blockId);
+  console.log('🔵 currentUser:', currentUser?.id);
+  console.log('🔵 activeSubjectId:', activeSubjectId);
+  console.log('🔵 activeUnitId:', activeUnitId);
+
   if (!currentUser?.id) return;
-  if (!activeUnitId) return;
+  if (!activeSubjectId || !activeUnitId) return;
 
-  const uid = String(currentUser.id);
-  const unitId = String(activeUnitId);
-  const bid = String(blockId).trim();
+  const userId = currentUser.id;
+  const courseId = activeSubjectId;
+  
+  // Extraer unit_number del activeUnitId (formato: "10-u1" o "ECO3A-U1")
+  const unitMatch = String(activeUnitId).match(/[uU](\d+)/);
+  const unitNumber = unitMatch ? parseInt(unitMatch[1]) : 1;
+  
+  const blockKey = String(blockId).trim();
+  
+  console.log('🔵 Buscando block con key:', blockKey, 'en course:', courseId);
 
-  // 1) UI optimista (instantáneo)
-  setUserProgress((prev) => {
-    const idx = prev.findIndex(
-      (p: any) =>
-        String(p.user_id) === uid &&
-        String(p.unit_id) === unitId &&
-        String(p.block_id).trim() === bid
-    );
+  // 1) Buscar el block.id en la BD
+  try {
+    const { data: blockData, error: blockError } = await supabase
+      .from('blocks')
+      .select('id')
+      .eq('course_id', courseId)
+      .eq('block_key', blockKey)
+      .maybeSingle();
 
-    // toggle visited
-    if (idx !== -1) {
-      const next = [...prev];
-      next[idx] = { ...(next[idx] as any), visited: !Boolean((next[idx] as any).visited) };
-      return next;
+    console.log('🔵 Resultado búsqueda block:', { blockData, blockError });
+
+    if (blockError) {
+      console.error('❌ Error buscando block:', blockError);
+      setToast('❌ Error al buscar bloque');
+      return;
     }
 
-    return [
-      ...prev,
-      {
-        user_id: uid,
-        unit_id: unitId,
-        block_id: bid,
-        visited: true,
-        status: "visited",
-        updated_at: new Date().toISOString(),
-      } as any,
-    ];
-  });
+    if (!blockData) {
+      console.warn('⚠️ Block no encontrado con key:', blockKey);
+      setToast('⚠️ Bloque no encontrado en BD');
+      return;
+    }
 
-  // 2) Persistir en Supabase (UPSERT)
-  try {
-    const payload = {
-      user_id: uid,
-      unit_id: unitId,
-      block_id: bid,
-      status: "visited",
-      updated_at: new Date().toISOString(),
-    };
+    const blockIdNumber = blockData.id;
+    console.log('✅ Block encontrado, id:', blockIdNumber);
 
-    const { error } = await supabase
-      .from("progress")
-      .upsert(payload, { onConflict: "user_id,unit_id,block_id" });
+    // 2) Verificar si ya existe progreso
+    const { data: existingProgress } = await supabase
+      .from('progress')
+      .select('id, status')
+      .eq('user_id', userId)
+      .eq('block_id', blockIdNumber)
+      .maybeSingle();
 
-    if (error) throw error;
-  } catch (err: any) {
-    console.error("❌ PROGRESS_UPSERT_FAILED:", err?.message ?? err);
+    console.log('🔵 Progreso existente:', existingProgress);
 
-    // Curita: recargar desde BD para dejar consistente
-    const { data } = await supabase
-      .from("progress")
-      .select("*")
-      .eq("user_id", uid);
+    // 3) Actualizar UI optimista
+    setUserProgress((prev) => {
+      if (existingProgress) {
+        // Ya existe: removerlo (desmarcar)
+        return prev.filter(p => p.id !== existingProgress.id);
+      }
+      // No existe: agregarlo
+      return [
+        ...prev,
+        {
+          id: Math.random(),
+          user_id: userId,
+          course_id: courseId,
+          block_id: blockIdNumber,
+          unit_id: `${courseId}-U${unitNumber}`,
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as any
+      ];
+    });
 
-    setUserProgress((data as any) || []);
+    // 4) Persistir en BD
+    if (existingProgress) {
+      // Desmarcar: borrar registro
+      const { error: deleteError } = await supabase
+        .from('progress')
+        .delete()
+        .eq('id', existingProgress.id);
+
+      if (deleteError) {
+        console.error('❌ Error borrando progreso:', deleteError);
+        setToast('❌ Error al desmarcar');
+        return;
+      }
+      
+      console.log('✅ Bloque desmarcado');
+      setToast('✅ Bloque desmarcado');
+    } else {
+      // Marcar: crear registro
+      const { error: insertError } = await supabase
+        .from('progress')
+        .insert({
+          user_id: userId,
+          course_id: courseId,
+          block_id: blockIdNumber,
+          unit_id: `${courseId}-U${unitNumber}`,
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        });
+
+      if (insertError) {
+        console.error('❌ Error insertando progreso:', insertError);
+        setToast('❌ Error al marcar');
+        
+        // Revertir UI
+        setUserProgress(prev => 
+          prev.filter(p => p.block_id !== blockIdNumber)
+        );
+        return;
+      }
+
+      console.log('✅ Bloque marcado como completado');
+      setToast('✅ Progreso guardado');
+    }
+
+  } catch (error: any) {
+    console.error('❌ Error general:', error);
+    setToast('❌ Error: ' + error.message);
   }
 };
 
