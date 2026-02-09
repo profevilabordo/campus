@@ -6,7 +6,7 @@ interface CampusHomeProps {
   userId?: string;                 // ✅ nuevo (para filtrar bien)
   subjects: any[];                 // después lo tipamos prolijo
   enrollRequests: EnrollmentRequest[];
-  onSelectSubject: (id: string) => void;
+  onSelectSubject: (id: number) => void; // ✅ subject.id en DB es int8
   onEnroll: (subjectId: string) => void;
   onCancelEnroll: (requestId: string) => void;
 }
@@ -56,7 +56,7 @@ const CampusHome: React.FC<CampusHomeProps> = ({
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
         {(subjects || []).map((subject) => {
-          const subjectId = String(subject.id);
+          const subjectId = Number(subject.id); // ✅ DB int8 → number
 
           const req = getRequestForSubject(subjectId);
           const status = getStatus(subjectId);

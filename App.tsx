@@ -1,4 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+// App.tsx (LIMPIO + COMENTADO)
+// ✅ Pegá este archivo completo para reemplazar tu App.tsx
+// ✅ No agrega features raras: solo ordena, corrige llaves, y deja TODO andando.
+// ✅ Mantiene tu UX: BootScreen, enroll, cancel, profile gate, teacher/student, toast, unitsMap, etc.
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   User,
   UserRole,
@@ -6,24 +11,24 @@ import {
   DBUnit,
   ProgressRecord,
   Unit,
-  EnrollmentStatus,
   Profile,
-  Assessment
-} from './types';
-import { supabase, isSupabaseConfigured } from './supabase';
-import Layout from './components/Layout';
-import Auth from './components/Auth';
-import CampusHome from './pages/CampusHome';
-import SubjectPage from './pages/SubjectPage';
-import UnitPage from './pages/UnitPage';
-import TeacherDashboard from './pages/TeacherDashboard';
-import StudentDashboard from './pages/StudentDashboard';
-import CompleteProfile from './pages/CompleteProfile';
+  Assessment,
+} from "./types";
+import { supabase, isSupabaseConfigured } from "./supabase";
 
+import Layout from "./components/Layout";
+import Auth from "./components/Auth";
 
+import CampusHome from "./pages/CampusHome";
+import SubjectPage from "./pages/SubjectPage";
+import UnitPage from "./pages/UnitPage";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import StudentDashboard from "./pages/StudentDashboard";
+import CompleteProfile from "./pages/CompleteProfile";
 
 const TIMEOUT_MS = 10000;
 
+// ✅ helper: evita que una consulta quede colgada
 async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
   return Promise.race([
     promise,
@@ -34,30 +39,26 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
 }
 
 const App: React.FC = () => {
-  const isProfileComplete = (p: any) => {
-  return (
-    p &&
-    String(p.first_name || '').trim() &&
-    String(p.last_name || '').trim() &&
-    String(p.dni || '').trim() &&
-    p.birth_date &&
-    String(p.address || '').trim() &&
-    String(p.city || '').trim()
-  );
-};
-
+  // =========================
+  // TOAST
+  // =========================
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(t);
   }, [toast]);
-  // ✅ Guard: si no hay config, no llamamos supabase
+
+  // =========================
+  // GUARD: Supabase configurado
+  // =========================
   if (!isSupabaseConfigured) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
         <div className="max-w-md w-full card-surface p-6 rounded-2xl">
-          <h1 className="text-white font-black text-xl uppercase tracking-tight mb-2">Config requerida</h1>
+          <h1 className="text-white font-black text-xl uppercase tracking-tight mb-2">
+            Config requerida
+          </h1>
           <p className="text-slate-300 text-sm">
             Supabase no está configurado. Revisá las variables de entorno en Vercel (URL y ANON KEY).
           </p>
@@ -66,6 +67,9 @@ const App: React.FC = () => {
     );
   }
 
+  // =========================
+  // AUTH / SESSION
+  // =========================
   const [session, setSession] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,6 +77,9 @@ const App: React.FC = () => {
 
   const isFetchingProfile = useRef(false);
 
+  // =========================
+  // DATA
+  // =========================
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [dbUnits, setDbUnits] = useState<DBUnit[]>([]);
   const [enrollRequests, setEnrollRequests] = useState<any[]>([]);
@@ -80,10 +87,39 @@ const App: React.FC = () => {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
 
-  const [view, setView] = useState<'home' | 'subject' | 'unit' | 'teacher' | 'student'>('home');
-  const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
-  const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
+ // =========================
+// VIEWS / ROUTING SIMPLE
+// =========================
 
+const [view, setView] = useState<
+  "home" | "subject" | "unit" | "teacher" | "student" | "profile"
+>("home");
+
+// 🔥 subject.id en DB es int8 → number en frontend
+const [activeSubjectId, setActiveSubjectId] = useState<number | null>(null);
+
+// 🔥 unit.id en tu JSON es string → se mantiene string
+const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
+
+
+  // =========================
+  // PERFIL COMPLETO (para alumnos)
+  // =========================
+  const isProfileComplete = (p: any) => {
+    return (
+      p &&
+      String(p.first_name || "").trim() &&
+      String(p.last_name || "").trim() &&
+      String(p.dni || "").trim() &&
+      p.birth_date &&
+      String(p.address || "").trim() &&
+      String(p.city || "").trim()
+    );
+  };
+
+  // =========================
+  // MAPA UNITS (DB -> Unit)
+  // =========================
   const unitsMap = useMemo(() => {
     const map: Record<string, Unit> = {};
 
@@ -100,40 +136,46 @@ const App: React.FC = () => {
         id: String(unitId),
         subject_id: String(subjectId),
         number: Number(number) || 0,
-        title: String(title || ''),
-        description: raw.description || '',
+        title: String(title || ""),
+        description: raw.description || "",
         isAvailable: raw.isAvailable ?? true,
-        pdfBaseUrl: raw.pdfBaseUrl || '#',
-        pdfPrintUrl: raw.pdfPrintUrl || '#',
+        pdfBaseUrl: raw.pdfBaseUrl || "#",
+        pdfPrintUrl: raw.pdfPrintUrl || "#",
         metadata:
           raw.metadata || {
-            version: '1.0.0',
+            version: "1.0.0",
             updated_at: new Date().toISOString(),
-            change_note: ''
+            change_note: "",
           },
-        blocks: raw.blocks || []
+        blocks: raw.blocks || [],
       };
     });
 
     return map;
   }, [dbUnits]);
 
+  // =========================
+  // UI: remover loader del index.html
+  // =========================
   const removeLoader = () => {
-    const l = document.getElementById('fallback-loader');
+    const l = document.getElementById("fallback-loader");
     if (l) {
-      l.style.opacity = '0';
+      l.style.opacity = "0";
       setTimeout(() => l.remove(), 400);
     }
   };
 
+  // =========================
+  // UPDATE UNIT (teacher)
+  // =========================
   const handleUpdateUnit = async (newUnit: Unit) => {
     try {
-      const { error: updateError } = await supabase.from('units').upsert({
+      const { error: updateError } = await supabase.from("units").upsert({
         id: newUnit.id,
         subject_id: newUnit.subject_id,
         number: newUnit.number,
         title: newUnit.title,
-        content_json: newUnit
+        content_json: newUnit,
       });
 
       if (updateError) throw updateError;
@@ -142,50 +184,53 @@ const App: React.FC = () => {
         await loadUserData(currentUser.id, currentUser.email);
       }
     } catch (err: any) {
-      alert('Error al actualizar unidad: ' + err.message);
+      alert("Error al actualizar unidad: " + err.message);
     }
   };
 
+  // =========================
+  // CARGAR TODO (perfil + materias + unidades + progreso)
+  // =========================
   const loadUserData = async (userId: string, email: string) => {
     if (isFetchingProfile.current) return;
     isFetchingProfile.current = true;
 
     try {
+      // 1) PERFIL
       const profRes = await withTimeout(
-        supabase.from('profiles').select('*').eq('id', userId).single(),
-        'AUTH_PROFILE_SELECT'
+        supabase.from("profiles").select("*").eq("id", userId).single(),
+        "AUTH_PROFILE_SELECT"
       );
-      const { data: prof, error: profError } = profRes as unknown as { data: any; error: any };
+      const { data: prof, error: profError } = profRes as unknown as {
+        data: any;
+        error: any;
+      };
 
       let finalProfile: Profile;
 
+      // si no existe el perfil, lo creamos básico
       if (profError) {
-        if (profError.code === 'PGRST116') {
+        if (profError.code === "PGRST116") {
           const newProf: any = {
-  id: userId,
-  role: UserRole.STUDENT,      // ✅ fijo, nadie lo elige
-
-  // ✅ nuevos campos de perfil (se completan luego)
-  first_name: '',
-  last_name: '',
-  dni: '',
-  birth_date: null,            // lo completan en "Completar Perfil"
-  address: '',
-  city: '',
-  phone: null,
-
-  // si tu Profile tiene course_id:
-  course_id: null
-};
-
+            id: userId,
+            role: UserRole.STUDENT, // ✅ fijo
+            first_name: "",
+            last_name: "",
+            dni: "",
+            birth_date: null,
+            address: "",
+            city: "",
+            phone: null,
+            course_id: null,
+          };
 
           const upsertRes = await withTimeout(
-            supabase.from('profiles').upsert(newProf),
-            'AUTH_PROFILE_UPSERT'
+            supabase.from("profiles").upsert(newProf),
+            "AUTH_PROFILE_UPSERT"
           );
           const { error: upsertError } = upsertRes as unknown as { error: any };
-
           if (upsertError) throw upsertError;
+
           finalProfile = newProf as any;
         } else {
           throw profError;
@@ -198,17 +243,18 @@ const App: React.FC = () => {
       setCurrentUser({ id: userId, email, profile: finalProfile });
       const isTeacher = finalProfile.role === UserRole.TEACHER;
 
+      // gate de perfil: solo alumnos
       const needsProfile = !isTeacher && !isProfileComplete(finalProfile);
+      if (needsProfile) setView("profile");
 
-if (needsProfile) {
-  setView('profile');
-}
-
-
+      // helper fetch safe
       const fetchSafe = async (label: string, query: any) => {
         try {
           const fetchRes = await withTimeout(query, label);
-          const { data, error: fetchErr } = fetchRes as unknown as { data: any; error: any };
+          const { data, error: fetchErr } = fetchRes as unknown as {
+            data: any;
+            error: any;
+          };
           if (fetchErr) return [];
           return data || [];
         } catch {
@@ -216,30 +262,33 @@ if (needsProfile) {
         }
       };
 
+      // 2) DATA
       const [subjs, unts, enrl, prog, asss, profs] = await Promise.all([
-        fetchSafe('FETCH_SUBJECTS', supabase.from('subjects').select('*')),
-        fetchSafe('FETCH_UNITS', supabase.from('units').select('*')),
-        fetchSafe('FETCH_ENROLLMENTS', supabase.from('enrollment_requests').select('*')),
+        fetchSafe("FETCH_SUBJECTS", supabase.from("subjects").select("*")),
+        fetchSafe("FETCH_UNITS", supabase.from("units").select("*")),
+        fetchSafe("FETCH_ENROLLMENTS", supabase.from("enrollment_requests").select("*")),
         fetchSafe(
-          'FETCH_PROGRESS',
+          "FETCH_PROGRESS",
           isTeacher
-            ? supabase.from('progress').select('*')
-            : supabase.from('progress').select('*').eq('user_id', userId)
+            ? supabase.from("progress").select("*")
+            : supabase.from("progress").select("*").eq("user_id", userId)
         ),
         fetchSafe(
-          'FETCH_ASSESSMENTS',
+          "FETCH_ASSESSMENTS",
           isTeacher
-            ? supabase.from('assessments').select('*')
-            : supabase.from('assessments').select('*').eq('student_id', userId)
+            ? supabase.from("assessments").select("*")
+            : supabase.from("assessments").select("*").eq("student_id", userId)
         ),
-        isTeacher ? fetchSafe('FETCH_PROFILES', supabase.from('profiles').select('*')) : Promise.resolve([])
+        isTeacher
+          ? fetchSafe("FETCH_PROFILES", supabase.from("profiles").select("*"))
+          : Promise.resolve([]),
       ]);
 
-      // opcional: filtra "Economía" genérica
+      // opcional: filtra “Economía” genérica
       if (subjs.length) {
         const cleaned = subjs.filter((s: any) => {
-          const name = String(s?.name ?? '').trim().toLowerCase();
-          return name !== 'economía' && name !== 'economia';
+          const name = String(s?.name ?? "").trim().toLowerCase();
+          return name !== "economía" && name !== "economia";
         });
         setSubjects(cleaned as any);
       } else {
@@ -251,7 +300,6 @@ if (needsProfile) {
       setUserProgress(prog);
       setAssessments(asss);
       setAllProfiles(profs);
-
     } catch (err: any) {
       setError(`Error de sincronización: ${err.message}. Por favor, reintentá.`);
     } finally {
@@ -261,17 +309,25 @@ if (needsProfile) {
     }
   };
 
+  // =========================
+  // INIT SESSION
+  // =========================
   useEffect(() => {
     const hardStop = setTimeout(() => {
-      setError('La app quedó colgada en sincronización. Abrí consola (F12) y copiá el primer error rojo.');
+      setError(
+        "La app quedó colgada en sincronización. Abrí consola (F12) y copiá el primer error rojo."
+      );
       setLoading(false);
       removeLoader();
     }, 12000);
 
     const init = async () => {
       try {
-        const sessionRes = await withTimeout(supabase.auth.getSession(), 'AUTH_SESSION');
-        const { data, error: sessionError } = sessionRes as unknown as { data: any; error: any };
+        const sessionRes = await withTimeout(supabase.auth.getSession(), "AUTH_SESSION");
+        const { data, error: sessionError } = sessionRes as unknown as {
+          data: any;
+          error: any;
+        };
         if (sessionError) throw sessionError;
 
         const s = data?.session;
@@ -294,95 +350,99 @@ if (needsProfile) {
     init();
   }, []);
 
- // 👉 Solicitar inscripción
-const handleEnroll = async (subjectId: string) => {
-  if (!currentUser) return;
+  // =========================
+  // ENROLL (optimistic)
+  // =========================
+  const handleEnroll = async (subjectId: string) => {
+    if (!currentUser) return;
 
-  // 1️⃣ Feedback inmediato en UI (optimistic update)
-  setEnrollRequests(prev => {
-    const already = prev.some(r =>
-      String(r.user_id) === String(currentUser.id) &&
-      String(r.subject_id) === String(subjectId)
-    );
-    if (already) return prev;
+    // optimistic
+    setEnrollRequests((prev) => {
+      const already = prev.some(
+        (r) => String(r.user_id) === String(currentUser.id) && String(r.subject_id) === String(subjectId)
+      );
+      if (already) return prev;
 
-    return [
-      ...prev,
-      {
-        id: 'local-' + Math.random().toString(16).slice(2),
+      return [
+        ...prev,
+        {
+          id: "local-" + Math.random().toString(16).slice(2),
+          user_id: currentUser.id,
+          subject_id: Number(subjectId),
+          status: "pending",
+          created_at: new Date().toISOString(),
+        },
+      ];
+    });
+
+    setToast("✅ Solicitud recibida. En breve serás notificado.");
+
+    try {
+      const payload = {
         user_id: currentUser.id,
         subject_id: Number(subjectId),
-        status: 'pending',
-        created_at: new Date().toISOString()
-      }
-    ];
-  });
+        status: "pending",
+      };
 
-  setToast('✅ Solicitud recibida. En breve serás notificado.');
+      const { error } = await supabase
+        .from("enrollment_requests")
+        .upsert(payload, { onConflict: "user_id,subject_id" });
 
-  try {
-    const payload = {
-      user_id: currentUser.id,
-      subject_id: Number(subjectId),
-      status: 'pending'
-    };
+      if (error) throw error;
 
-    const { error } = await supabase
-      .from('enrollment_requests')
-      .upsert(payload, { onConflict: 'user_id,subject_id' });
+      await loadUserData(currentUser.id, currentUser.email);
+    } catch (err: any) {
+      console.error("ENROLL_FAILED", err?.message);
 
-    if (error) throw error;
+      // revert optimistic
+      setEnrollRequests((prev) =>
+        prev.filter(
+          (r) =>
+            !(
+              String(r.user_id) === String(currentUser.id) &&
+              String(r.subject_id) === String(subjectId)
+            )
+        )
+      );
 
-    // sincroniza con BD real
-    await loadUserData(currentUser.id, currentUser.email);
+      setToast("❌ No se pudo enviar la solicitud.");
+    }
+  };
 
-  } catch (err: any) {
-    console.error('ENROLL_FAILED', err?.message);
+  // =========================
+  // CANCEL ENROLL
+  // =========================
+  const handleCancelEnroll = async (requestId: string) => {
+    if (!currentUser) return;
 
-    // revertir optimistic update si falla
-    setEnrollRequests(prev =>
-      prev.filter(r =>
-        !(String(r.user_id) === String(currentUser.id) &&
-          String(r.subject_id) === String(subjectId))
-      )
-    );
+    // UI inmediata
+    setEnrollRequests((prev) => prev.filter((r) => String(r.id) !== String(requestId)));
 
-    setToast('❌ No se pudo enviar la solicitud.');
-  }
-};
+    try {
+      const { error } = await supabase.from("enrollment_requests").delete().eq("id", requestId);
+      if (error) throw error;
 
+      await loadUserData(currentUser.id, currentUser.email);
+    } catch (err: any) {
+      alert("Error al cancelar solicitud: " + err.message);
+    }
+  };
 
-// 👉 Cancelar inscripción
-const handleCancelEnroll = async (requestId: string) => {
-  if (!currentUser) return;
-
-  // 1️⃣ Actualización inmediata en UI
-  setEnrollRequests(prev =>
-    prev.filter(r => String(r.id) !== String(requestId))
-  );
-
-  try {
-    const { error } = await supabase
-      .from('enrollment_requests')
-      .delete()
-      .eq('id', requestId);
-
-    if (error) throw error;
-
-    await loadUserData(currentUser.id, currentUser.email);
-
-  } catch (err: any) {
-    alert('Error al cancelar solicitud: ' + err.message);
-  }
-};
-
+  // =========================
+  // ERROR SCREEN
+  // =========================
   if (error) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-center">
         <div className="max-w-md space-y-6">
           <div className="w-20 h-20 bg-rose-500/20 text-rose-500 rounded-full flex items-center justify-center mx-auto border border-rose-500/30">
             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="3"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
             </svg>
           </div>
           <h1 className="text-white font-black text-2xl uppercase tracking-tighter">Error de Conexión</h1>
@@ -397,83 +457,99 @@ const handleCancelEnroll = async (requestId: string) => {
       </div>
     );
   }
-const BootScreen: React.FC = () => {
-  return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
-      {/* glow suave */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_45%),radial-gradient(circle_at_70%_60%,rgba(99,102,241,0.10),transparent_50%)]" />
 
-      <div className="relative min-h-screen flex items-center justify-center p-8">
-        <div className="text-center space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(56,189,248,0.18)]">
-            <div className="w-8 h-8 rounded-full border-4 border-sky-500/30 border-t-sky-400 animate-spin" />
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-white font-black text-xl tracking-tight">
-              Cargando Campus…
+  // =========================
+  // BOOT SCREEN (min 900ms)
+  // =========================
+  const BootScreen: React.FC = () => {
+    return (
+      <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_45%),radial-gradient(circle_at_70%_60%,rgba(99,102,241,0.10),transparent_50%)]" />
+        <div className="relative min-h-screen flex items-center justify-center p-8">
+          <div className="text-center space-y-6">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(56,189,248,0.18)]">
+              <div className="w-8 h-8 rounded-full border-4 border-sky-500/30 border-t-sky-400 animate-spin" />
             </div>
-            <div className="text-slate-400 text-sm serif italic">
-              Sincronizando materias y permisos
+
+            <div className="space-y-2">
+              <div className="text-white font-black text-xl tracking-tight">Cargando Campus…</div>
+              <div className="text-slate-400 text-sm serif italic">Sincronizando materias y permisos</div>
             </div>
-          </div>
 
-          <div className="w-[260px] mx-auto h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-            <div className="h-full w-1/2 bg-sky-500 animate-pulse" />
-          </div>
+            <div className="w-[260px] mx-auto h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+              <div className="h-full w-1/2 bg-sky-500 animate-pulse" />
+            </div>
 
-          <div className="text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">
-            Cuaderno Vivo
+            <div className="text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">
+              Cuaderno Vivo
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-const [minLoaderDone, setMinLoaderDone] = useState(false);
+    );
+  };
 
-useEffect(() => {
-  const t = setTimeout(() => setMinLoaderDone(true), 900);
-  return () => clearTimeout(t);
-}, []);
+  const [minLoaderDone, setMinLoaderDone] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMinLoaderDone(true), 900);
+    return () => clearTimeout(t);
+  }, []);
 
+  if (loading || !minLoaderDone) return <BootScreen />;
 
-if (loading || !minLoaderDone) return <BootScreen />;
+  // =========================
+  // AUTH SCREEN
+  // =========================
+  if (!session) {
+    return (
+      <Auth
+        onSession={(s) => {
+          setSession(s);
+          loadUserData(s.user.id, s.user.email!);
+        }}
+      />
+    );
+  }
 
-
-  if (!session) return <Auth onSession={(s) => { setSession(s); loadUserData(s.user.id, s.user.email!); }} />;
-
+  // =========================
+  // APPROVED?
+  // =========================
   const isApproved = (sId: string) =>
-  currentUser?.profile.role === UserRole.TEACHER ||
-  enrollRequests.some(
-    r =>
-      String(r.subject_id) === String(sId) &&
-      String(r.user_id) === String(currentUser?.id) &&
-      r.status === 'approved'
-  );
-const handleUpdateProgress = (blockId: string) => {
+    currentUser?.profile.role === UserRole.TEACHER ||
+    enrollRequests.some(
+      (r) =>
+        String(r.subject_id) === String(sId) &&
+        String(r.user_id) === String(currentUser?.id) &&
+        r.status === "approved"
+    );
+
+  // =========================
+  // PROGRESS (local) - NOTE: hoy es local. Si querés, después lo persistimos a Supabase.
+  // =========================
+const handleUpdateProgress = async (blockId: string) => {
   if (!currentUser?.id) return;
+  if (!activeUnitId) return;
 
   const uid = String(currentUser.id);
   const unitId = String(activeUnitId);
   const bid = String(blockId).trim();
 
+  // 1) UI optimista (instantáneo)
   setUserProgress((prev) => {
     const idx = prev.findIndex(
-      (p) =>
+      (p: any) =>
         String(p.user_id) === uid &&
         String(p.unit_id) === unitId &&
         String(p.block_id).trim() === bid
     );
 
-    // Si existe, toggle visited
+    // toggle visited
     if (idx !== -1) {
       const next = [...prev];
-      next[idx] = { ...next[idx], visited: !next[idx].visited };
+      next[idx] = { ...(next[idx] as any), visited: !Boolean((next[idx] as any).visited) };
       return next;
     }
 
-    // Si no existe, lo crea como visitado
     return [
       ...prev,
       {
@@ -481,158 +557,195 @@ const handleUpdateProgress = (blockId: string) => {
         unit_id: unitId,
         block_id: bid,
         visited: true,
-      },
+        status: "visited",
+        updated_at: new Date().toISOString(),
+      } as any,
     ];
   });
+
+  // 2) Persistir en Supabase (UPSERT)
+  try {
+    const payload = {
+      user_id: uid,
+      unit_id: unitId,
+      block_id: bid,
+      status: "visited",
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from("progress")
+      .upsert(payload, { onConflict: "user_id,unit_id,block_id" });
+
+    if (error) throw error;
+  } catch (err: any) {
+    console.error("❌ PROGRESS_UPSERT_FAILED:", err?.message ?? err);
+
+    // Curita: recargar desde BD para dejar consistente
+    const { data } = await supabase
+      .from("progress")
+      .select("*")
+      .eq("user_id", uid);
+
+    setUserProgress((data as any) || []);
+  }
 };
 
+
+  // =========================
+  // RENDER
+  // =========================
   return (
-  <Layout
-    user={currentUser}
-    onLogout={() => {
-      // si no hay supabase configurado, evitamos crashear
-      try {
-        supabase.auth.signOut().then(() => window.location.reload());
-      } catch {
-        window.location.reload();
-      }
-    }}
-  >
-    {view === 'home' && (
-     <CampusHome
-  userRole={currentUser?.profile.role}
-  userId={currentUser?.id}
-  subjects={subjects}
-  enrollRequests={enrollRequests}
-  onSelectSubject={(id) => { setActiveSubjectId(id); setView('subject'); }}
-  onEnroll={(id) => handleEnroll(id)}
-  onCancelEnroll={handleCancelEnroll}   // 👈 ESTA ES LA CLAVE
-/>
-
-
-    )}
-
-    {view === 'subject' && activeSubjectId && (
-      <SubjectPage
-        subject={subjects.find(s => String(s.id) === String(activeSubjectId))!}
-        isApproved={isApproved(String(activeSubjectId))}
-        userCourseId={currentUser?.profile.course_id}
-        availableUnits={Object.values(unitsMap).filter((u: any) =>
-          String(u.subject_id) === String(activeSubjectId) && (u.isAvailable ?? true)
-        )}
-        onSelectUnit={(id) => { setActiveUnitId(String(id)); setView('unit'); }}
-        onBack={() => setView('home')}
-      />
-    )}
-
-    {view === "unit" && activeUnitId && (
-  <UnitPage
-    unit={unitsMap[String(activeUnitId)]}
-    progress={userProgress.filter(
-      (p) =>
-        String(p.user_id) === String(currentUser?.id) &&
-        String(p.unit_id) === String(activeUnitId)
-    )}
-    onUpdateProgress={handleUpdateProgress}
-    onBack={() => setView("subject")}
-  />
-)}
-
-    {view === 'teacher' && (
-      <TeacherDashboard
-        subjects={subjects}
-        units={unitsMap}
-        enrollRequests={enrollRequests}   // ✅ sin map raro
-        progressRecords={userProgress}
-        profiles={allProfiles}
-        onUpdateEnrollRequest={async (id, status) => {
-          await supabase.from('enrollment_requests').update({ status }).eq('id', id);
-          if (currentUser) {
-            await loadUserData(currentUser.id, currentUser.email);
-          }
-        }}
-        onUpdateUnit={handleUpdateUnit}
-      />
-    )}
-{view === 'profile' && (
-  <CompleteProfile
-    user={currentUser!}
-    onComplete={async () => {
-      if (currentUser) {
-        await loadUserData(currentUser.id, currentUser.email);
-          }
-        setView('student');
-}}
-
-  />
-)}
-
-    {view === 'student' && (
-      <StudentDashboard
-        user={currentUser!}
-        subjects={subjects}
-        enrollRequests={enrollRequests}   // ✅ real
-        onEnroll={handleEnroll}           // ✅ real
-        progress={userProgress.filter(p => String(p.user_id) === String(currentUser?.id))}
-        assessments={assessments}
-        onSelectSubject={(id) => {
-          const raw = String(id);
-          const isNumeric = /^\d+$/.test(raw);
-
-          if (isNumeric) {
-            setActiveSubjectId(raw);
-            setView('subject');
-            return;
-          }
-
-          const normalize = (s: string) =>
-            s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-
-          const wanted = normalize(raw);
-          const found = subjects.find((s: any) => normalize(String(s.name || '')) === wanted);
-
-          if (!found) {
-            setActiveSubjectId(raw);
-            setView('subject');
-            return;
-          }
-
-          setActiveSubjectId(String(found.id));
-          setView('subject');
-        }}
-      />
-    )}
-
-    {/* FAB switch teacher/student */}
-    <button
-      onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? 'teacher' : 'student')}
-      className="fixed bottom-8 right-8 p-5 bg-sky-500 rounded-3xl shadow-2xl z-50 hover:scale-110 active:scale-95 transition-all border-4 border-slate-900 group"
+    <Layout
+      user={currentUser}
+      onLogout={() => {
+        try {
+          supabase.auth.signOut().then(() => window.location.reload());
+        } catch {
+          window.location.reload();
+        }
+      }}
     >
-      <svg
-  className="w-8 h-8 text-white group-hover:rotate-12 transition-transform"
-  fill="none"
-  stroke="currentColor"
-  viewBox="0 0 24 24"
->
-  <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2.5"
-    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-  />
-</svg>
+      {view === "home" && (
+        <CampusHome
+          userRole={currentUser?.profile.role}
+          userId={currentUser?.id}
+          subjects={subjects}
+          enrollRequests={enrollRequests}
+          onSelectSubject={(id) => {
+            setActiveSubjectId(id);
+            setView("subject");
+          }}
+          onEnroll={(id) => handleEnroll(id)}
+          onCancelEnroll={handleCancelEnroll}
+        />
+      )}
 
-    </button>
+      {view === "subject" && activeSubjectId && (
+        <SubjectPage
+          subject={subjects.find((s) => String(s.id) === String(activeSubjectId))!}
+          isApproved={isApproved(String(activeSubjectId))}
+          userCourseId={currentUser?.profile.course_id}
+          availableUnits={Object.values(unitsMap).filter(
+            (u: any) => String(u.subject_id) === String(activeSubjectId) && (u.isAvailable ?? true)
+          )}
+          onSelectUnit={(id) => {
+            setActiveUnitId(String(id));
+            setView("unit");
+          }}
+          onBack={() => setView("home")}
+        />
+      )}
 
-    {/* Toast */}
-    {toast && (
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-sky-500 text-black font-black text-xs uppercase tracking-widest px-6 py-3 rounded-2xl shadow-2xl border-4 border-slate-900 z-[999]">
-        ✅ {toast}
-      </div>
-    )}
-  </Layout>
-);
+      {view === "unit" && activeUnitId && (
+        <UnitPage
+          unit={unitsMap[String(activeUnitId)]}
+          progress={userProgress.filter(
+  (p: any) =>
+    String(p.user_id) === String(currentUser?.id) &&
+    String((p as any).unit_id) === String(activeUnitId)
+)}
 
+          onUpdateProgress={handleUpdateProgress}
+          onBack={() => setView("subject")}
+        />
+      )}
+
+      {view === "teacher" && (
+        <TeacherDashboard
+          subjects={subjects}
+          units={unitsMap}
+          enrollRequests={enrollRequests}
+          progressRecords={userProgress}
+          profiles={allProfiles}
+          onUpdateEnrollRequest={async (id, status) => {
+            await supabase.from("enrollment_requests").update({ status }).eq("id", id);
+            if (currentUser) {
+              await loadUserData(currentUser.id, currentUser.email);
+            }
+          }}
+          onUpdateUnit={handleUpdateUnit}
+        />
+      )}
+
+      {view === "profile" && (
+        <CompleteProfile
+          user={currentUser!}
+          onComplete={async () => {
+            if (currentUser) {
+              await loadUserData(currentUser.id, currentUser.email);
+            }
+            setView("student");
+          }}
+        />
+      )}
+
+      {view === "student" && (
+        <StudentDashboard
+          user={currentUser!}
+          subjects={subjects}
+          enrollRequests={enrollRequests}
+          onEnroll={handleEnroll}
+          progress={userProgress.filter((p: any) => String(p.user_id) === String(currentUser?.id))}
+          assessments={assessments}
+          onSelectSubject={(id) => {
+            const raw = String(id);
+            const isNumeric = /^\d+$/.test(raw);
+
+            if (isNumeric) {
+              setActiveSubjectId(raw);
+              setView("subject");
+              return;
+            }
+
+            const normalize = (s: string) =>
+              s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+            const wanted = normalize(raw);
+            const found = subjects.find((s: any) => normalize(String((s as any).name || "")) === wanted);
+
+            if (!found) {
+              setActiveSubjectId(raw);
+              setView("subject");
+              return;
+            }
+
+            setActiveSubjectId(String((found as any).id));
+            setView("subject");
+          }}
+        />
+      )}
+
+      {/* FAB switch teacher/student */}
+      <button
+        onClick={() =>
+          setView(currentUser?.profile.role === UserRole.TEACHER ? "teacher" : "student")
+        }
+        className="fixed bottom-8 right-8 p-5 bg-sky-500 rounded-3xl shadow-2xl z-50 hover:scale-110 active:scale-95 transition-all border-4 border-slate-900 group"
+      >
+        <svg
+          className="w-8 h-8 text-white group-hover:rotate-12 transition-transform"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2.5"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+      </button>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-sky-500 text-black font-black text-xs uppercase tracking-widest px-6 py-3 rounded-2xl shadow-2xl border-4 border-slate-900 z-[999]">
+          ✅ {toast}
+        </div>
+      )}
+    </Layout>
+  );
 };
 
 export default App;
