@@ -514,14 +514,15 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
   // =========================
   // APPROVED?
   // =========================
-  const isApproved = (sId: string) =>
-    currentUser?.profile.role === UserRole.TEACHER ||
-    enrollRequests.some(
-      (r) =>
-        String(r.subject_id) === String(sId) &&
-        String(r.user_id) === String(currentUser?.id) &&
-        r.status === "approved"
-    );
+  const isApproved = (subjectId: number) =>
+  currentUser?.profile.role === UserRole.TEACHER ||
+  enrollRequests.some(
+    (r) =>
+      Number(r.subject_id) === subjectId &&
+      String(r.user_id) === String(currentUser?.id) &&
+      r.status === "approved"
+  );
+
 
   // =========================
   // PROGRESS (local) - NOTE: hoy es local. Si querés, después lo persistimos a Supabase.
@@ -621,21 +622,27 @@ const handleUpdateProgress = async (blockId: string) => {
         />
       )}
 
-      {view === "subject" && activeSubjectId && (
+    {view === "subject" && activeSubjectId !== null && (
         <SubjectPage
-          subject={subjects.find((s) => String(s.id) === String(activeSubjectId))!}
-          isApproved={isApproved(String(activeSubjectId))}
-          userCourseId={currentUser?.profile.course_id}
-          availableUnits={Object.values(unitsMap).filter(
+        // ✅ subjects.id es number -> comparación directa
+        subject={subjects.find((s) => s.id === activeSubjectId)!}
+        // ✅ isApproved ahora recibe number
+        isApproved={isApproved(activeSubjectId)}
+        // ✅ course_id debe ser number | null
+         userCourseId={currentUser?.profile.course_id ?? null}
+        // ✅ unit.subject_id hoy en tu JSON es string -> comparamos como string
+        availableUnits={Object.values(unitsMap).filter(
             (u: any) => String(u.subject_id) === String(activeSubjectId) && (u.isAvailable ?? true)
-          )}
-          onSelectUnit={(id) => {
-            setActiveUnitId(String(id));
-            setView("unit");
+            )}
+            onSelectUnit={(id) => {
+          // ✅ unit id es string
+          setActiveUnitId(String(id));
+         setView("unit");
           }}
-          onBack={() => setView("home")}
-        />
+         onBack={() => setView("home")}
+          />
       )}
+
 
       {view === "unit" && activeUnitId && (
         <UnitPage
