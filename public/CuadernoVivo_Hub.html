@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Cuaderno Vivo — Catálogo de Actividades</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #0F172A 0%, #1E1B4B 40%, #312E81 70%, #1E1B4B 100%);
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  /* Animated background orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.3;
+    animation: float 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb-1 { width: 400px; height: 400px; background: #6366F1; top: -100px; left: -100px; animation-delay: 0s; }
+  .orb-2 { width: 350px; height: 350px; background: #EC4899; bottom: -80px; right: -80px; animation-delay: -3s; }
+  .orb-3 { width: 300px; height: 300px; background: #0EA5E9; top: 50%; left: 60%; animation-delay: -5s; }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.05); }
+    66% { transform: translate(-20px, 15px) scale(0.95); }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+    animation: slideDown 0.8s ease;
+  }
+  .header-icon {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 12px;
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  .header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    background: linear-gradient(135deg, #A78BFA, #EC4899, #F59E0B);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .header p {
+    font-size: 16px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 500;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 28px 0 40px;
+    animation: slideUp 0.8s ease 0.2s both;
+  }
+  .stat {
+    text-align: center;
+    padding: 14px 20px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    min-width: 100px;
+  }
+  .stat-number {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: #A78BFA;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Section cards */
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .card {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-decoration: none;
+    color: #fff;
+    display: block;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .card:hover {
+    transform: translateY(-4px) scale(1.01);
+    border-color: rgba(255,255,255,0.2);
+  }
+  .card:active {
+    transform: translateY(0) scale(0.99);
+  }
+
+  .card-bg {
+    padding: 28px 28px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.12;
+    transition: opacity 0.3s;
+  }
+  .card:hover .card-bg::before {
+    opacity: 0.18;
+  }
+
+  .card-1 .card-bg { background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08)); }
+  .card-1:hover .card-bg { background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.15)); }
+  .card-1 { box-shadow: 0 4px 30px rgba(99,102,241,0.1); }
+  .card-1:hover { box-shadow: 0 8px 40px rgba(99,102,241,0.25); }
+
+  .card-2 .card-bg { background: linear-gradient(135deg, rgba(14,165,233,0.15), rgba(124,58,237,0.08)); }
+  .card-2:hover .card-bg { background: linear-gradient(135deg, rgba(14,165,233,0.25), rgba(124,58,237,0.15)); }
+  .card-2 { box-shadow: 0 4px 30px rgba(14,165,233,0.1); }
+  .card-2:hover { box-shadow: 0 8px 40px rgba(14,165,233,0.25); }
+
+  .card-3 .card-bg { background: linear-gradient(135deg, rgba(20,184,166,0.15), rgba(99,102,241,0.08)); }
+  .card-3:hover .card-bg { background: linear-gradient(135deg, rgba(20,184,166,0.25), rgba(99,102,241,0.15)); }
+  .card-3 { box-shadow: 0 4px 30px rgba(20,184,166,0.1); }
+  .card-3:hover { box-shadow: 0 8px 40px rgba(20,184,166,0.25); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .card-icon {
+    font-size: 42px;
+    flex-shrink: 0;
+  }
+  .card-title-group h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 2px;
+  }
+  .card-title-group .card-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 500;
+  }
+
+  .card-sections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .card-tag {
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+  .card:hover .card-tag {
+    background: rgba(255,255,255,0.12);
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-count {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+  }
+  .card-arrow {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.3s;
+  }
+  .card:hover .card-arrow {
+    background: rgba(255,255,255,0.2);
+    transform: translateX(4px);
+  }
+
+  /* Roadmap at bottom */
+  .roadmap {
+    margin-top: 40px;
+    text-align: center;
+    animation: slideUp 0.8s ease 0.6s both;
+  }
+  .roadmap h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+  .sections-flow {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 10px;
+  }
+  .flow-item {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+  }
+  .flow-item.active {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .flow-item.inactive {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.35);
+  }
+  .flow-arrow {
+    color: rgba(255,255,255,0.2);
+    font-size: 12px;
+  }
+
+  /* Animations */
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card-1 { animation: slideUp 0.6s ease 0.3s both; }
+  .card-2 { animation: slideUp 0.6s ease 0.45s both; }
+  .card-3 { animation: slideUp 0.6s ease 0.6s both; }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .header h1 { font-size: 28px; }
+    .stats { gap: 12px; }
+    .stat { min-width: 80px; padding: 10px 14px; }
+    .stat-number { font-size: 22px; }
+    .card-bg { padding: 20px; }
+    .card-icon { font-size: 34px; }
+    .card-title-group h2 { font-size: 18px; }
+    .card-sections { gap: 6px; }
+    .card-tag { font-size: 11px; padding: 5px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <span class="header-icon">📓</span>
+    <h1>Campus Cuaderno Vivo</h1>
+    <p>Catálogo de Actividades Reutilizables</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-number">10</div>
+      <div class="stat-label">Secciones</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">25+</div>
+      <div class="stat-label">Actividades</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">3</div>
+      <div class="stat-label">Catálogos</div>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards">
+
+    <!-- Card 1 -->
+    <a class="card card-1" href="catalogo1_umbral_nucleo_sabias.html">
+      <div class="card-bg">
+        <div class="card-header">
+          <span class="card-icon">⚛️</span>
+          <div class="card-title-group">
+            <h2>Parte 1 — El Alma</h2>
+            <span class="card-subtitle">UMBRAL · NÚCLEO (×10) · SABÍAS</span>
+          </div>
+        </div>
+        <div class="card-sections">
+          <span class="card-tag">🚪 Umbral</span>
+          <span class="card-tag">⚛️ Núcleo <b style="color:#A78BFA">×10</b></span>
+          <span class="card-tag">✨ Sabías</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-count">16 actividades · Ordenar, clasificar, V/F, relacionar, intrusa, definir, causa-efecto, proceso, comparar</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Card 2 -->
+    <a class="card card-2" href="catalogo2_mapa_senales_relectura.html">
+      <div class="card-bg">
+        <div class="card-header">
+          <span class="card-icon">🗺️</span>
+          <div class="card-title-group">
+            <h2>Parte 2 — El Recorrido</h2>
+            <span class="card-subtitle">MAPA · SEÑALES · RELECTURA</span>
+          </div>
+        </div>
+        <div class="card-sections">
+          <span class="card-tag">🗺️ Mapa</span>
+          <span class="card-tag">🚦 Señales</span>
+          <span class="card-tag">📖 Relectura</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-count">9 actividades · Ruta visual, panorámica, mapa mental, tarjetas clave, semáforo, tribunal, tesis, crítica</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Card 3 -->
+    <a class="card card-3" href="catalogo3_cruces_emocional_autotest_cierre.html">
+      <div class="card-bg">
+        <div class="card-header">
+          <span class="card-icon">🎯</span>
+          <div class="card-title-group">
+            <h2>Parte 3 — El Cierre</h2>
+            <span class="card-subtitle">CRUCES · EMOCIONAL · AUTOTEST · CIERRE</span>
+          </div>
+        </div>
+        <div class="card-sections">
+          <span class="card-tag">🔀 Cruces</span>
+          <span class="card-tag">🫶 Emocional</span>
+          <span class="card-tag">📝 Autotest</span>
+          <span class="card-tag">🔚 Cierre</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-count">9 actividades · Puentes, escala emocional, diario, quiz con nota, glosario, recursos</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Roadmap -->
+  <div class="roadmap">
+    <h3>Flujo completo del estudiante</h3>
+    <div class="sections-flow">
+      <span class="flow-item active">🚪 Umbral</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active">🗺️ Mapa</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active">⚛️ Núcleo</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active">🚦 Señales</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active">✨ Sabías</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active" style="border-style:dashed;">🔀 Cruces</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active">📖 Relectura</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active">🫶 Emocional</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active">📝 Autotest</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-item active">🔚 Cierre</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

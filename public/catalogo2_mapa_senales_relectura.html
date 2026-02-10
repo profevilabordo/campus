@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Cuaderno Vivo — Parte 2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'DM Sans',sans-serif;}
+body{min-height:100vh;background:linear-gradient(180deg,#F8FAFC 0%,#EEF2FF 50%,#FFF7ED 100%);padding:20px 16px;}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.header{text-align:center;margin-bottom:28px;}
+.header h1{margin:0;font-size:26px;font-weight:800;background:linear-gradient(135deg,#0EA5E9,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Space Grotesk',sans-serif;letter-spacing:-1px;}
+.tabs{display:flex;gap:8px;margin-bottom:24px;justify-content:center;flex-wrap:wrap;}
+.tab{padding:10px 20px;border-radius:14px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;}
+.tab.active{color:#fff;transform:scale(1.05);}
+.tab:not(.active){background:#fff;color:#6B7280;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+.content{max-width:600px;margin:0 auto;}
+.section-header{padding:28px 32px;border-radius:20px 20px 0 0;position:relative;overflow:hidden;}
+.section-header .bg-icon{position:absolute;top:-30px;right:-20px;font-size:100px;opacity:0.1;transform:rotate(12deg);}
+.section-header .label{font-size:14px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.section-header h2{margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.section-header p{margin:6px 0 0;font-size:14px;color:rgba(255,255,255,0.8);}
+.section-body{padding:20px;background:#fff;border-radius:0 0 20px 20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);}
+.activity{background:#fff;border-radius:16px;border:1px solid #E5E7EB;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.activity-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.2s;}
+.activity-header h4{margin:0;font-size:16px;font-weight:700;color:#1F2937;}
+.activity-header p{margin:4px 0 0;font-size:13px;color:#6B7280;}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.5px;}
+.arrow{transition:transform 0.3s;font-size:18px;color:#9CA3AF;}
+.arrow.open{transform:rotate(180deg);}
+.activity-content{padding:20px;border-top:1px solid #F3F4F6;animation:fadeSlideUp 0.3s ease;}
+.btn-primary{display:block;margin:14px auto 0;padding:10px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.btn-primary:disabled{background:#D1D5DB;cursor:not-allowed;box-shadow:none;}
+.btn-secondary{padding:6px 16px;border-radius:8px;border:none;background:#6366F1;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+textarea{width:100%;padding:12px 14px;border-radius:10px;border:2px solid #E5E7EB;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:70px;line-height:1.5;transition:border-color 0.3s;}
+textarea:focus{border-color:#C7D2FE;}
+.footer-note{margin-top:28px;padding:20px 24px;border-radius:16px;background:#F9FAFB;border:1px dashed #D1D5DB;text-align:center;font-size:13px;color:#6B7280;}
+.progress-bar{height:6px;border-radius:6px;background:#E5E7EB;overflow:hidden;}
+.progress-fill{height:100%;border-radius:6px;transition:width 0.5s ease;}
+.feedback{margin-top:12px;padding:12px 16px;border-radius:12px;animation:fadeSlideUp 0.3s ease;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:8px">
+    <span style="font-size:32px">📓</span>
+    <h1>Campus Cuaderno Vivo</h1>
+  </div>
+  <p style="font-size:14px;color:#6B7280;font-weight:500">Catálogo de Actividades — Parte 2</p>
+</div>
+<div class="tabs">
+  <button class="tab active" id="tab0" onclick="switchTab(0)" style="background:linear-gradient(135deg,#0EA5E9,#0284C7);box-shadow:0 4px 15px rgba(14,165,233,0.4)">🗺️ MAPA</button>
+  <button class="tab" id="tab1" onclick="switchTab(1)">🚦 SEÑALES</button>
+  <button class="tab" id="tab2" onclick="switchTab(2)">📖 RELECTURA</button>
+</div>
+<div class="content" id="mainContent"></div>
+<div class="footer-note">💡 <strong>Cada actividad es reutilizable:</strong> solo cambiás el contenido y el tipo se adapta a cualquier unidad.</div>
+<script>
+let currentTab=0;
+const tabColors=[
+  {gradient:"linear-gradient(135deg,#0EA5E9,#0284C7)",shadow:"0 4px 15px rgba(14,165,233,0.4)",color:"#0EA5E9"},
+  {gradient:"linear-gradient(135deg,#F97316,#EA580C)",shadow:"0 4px 15px rgba(249,115,22,0.4)",color:"#F97316"},
+  {gradient:"linear-gradient(135deg,#7C3AED,#6D28D9)",shadow:"0 4px 15px rgba(124,58,237,0.4)",color:"#7C3AED"}
+];
+const state={};
+
+function switchTab(idx){
+  currentTab=idx;
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    if(i===idx){t.classList.add('active');t.style.background=tabColors[i].gradient;t.style.boxShadow=tabColors[i].shadow;t.style.color='#fff';}
+    else{t.classList.remove('active');t.style.background='#fff';t.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';t.style.color='#6B7280';}
+  });
+  render();
+}
+function render(){
+  const c=document.getElementById('mainContent');
+  if(currentTab===0) c.innerHTML=renderMapa();
+  else if(currentTab===1) c.innerHTML=renderSenales();
+  else c.innerHTML=renderRelectura();
+}
+function toggleActivity(id){state['open_'+id]=!state['open_'+id];render();}
+
+function sectionHeader(icon,title,subtitle,gradient){
+  return `<div class="section-header" style="background:${gradient}"><div class="bg-icon">${icon}</div><div class="label">Sección</div><h2>${icon} ${title}</h2><p>${subtitle}</p></div>`;
+}
+function activityWrap(id,title,desc,level,color,content,defaultOpen){
+  const isOpen=state['open_'+id]!==undefined?state['open_'+id]:(defaultOpen||false);
+  return `<div class="activity"><div class="activity-header" onclick="toggleActivity('${id}')" style="border-left:4px solid ${color};${isOpen?'background:'+color+'08':''}"><div><h4>${title}</h4><p>${desc}</p></div><div style="display:flex;align-items:center;gap:10px"><span class="badge" style="background:${color}18;color:${color}">🧠 ${level}</span><span class="arrow ${isOpen?'open':''}">▼</span></div></div>${isOpen?'<div class="activity-content">'+content+'</div>':''}</div>`;
+}
+
+// ===== MAPA =====
+function renderMapa(){
+  return sectionHeader('🗺️','MAPA','Qué vamos a ver en la unidad — Vista previa del recorrido','linear-gradient(135deg,#0EA5E9,#0284C7)')
+    +'<div class="section-body">'
+    +activityWrap('m1','🛤️ Ruta Visual','Recorré la unidad como un camino con paradas interactivas','Explorar','#0EA5E9',renderM1Ruta(),true)
+    +activityWrap('m2','🏔️ Vista Panorámica','Bloques temáticos expandibles con preview de contenidos','Anticipar','#10B981',renderM2Panoramica())
+    +activityWrap('m3','🧠 Mapa Mental','Nodo central con ramas que se expanden al tocar','Conectar','#8B5CF6',renderM3Mental())
+    +'</div>';
+}
+
+function renderM1Ruta(){
+  if(!state.m1) state.m1={active:null,visited:{}};
+  const s=state.m1;
+  const paradas=[{id:1,title:'Concepto de Economía',desc:'Definición, etimología y objeto de estudio',emoji:'📚',color:'#6366F1'},{id:2,title:'Necesidades y Bienes',desc:'Clasificación de necesidades y tipos de bienes económicos',emoji:'🛒',color:'#3B82F6'},{id:3,title:'Agentes Económicos',desc:'Familias, empresas y Estado: roles e interacciones',emoji:'🏛️',color:'#10B981'},{id:4,title:'Sistemas Económicos',desc:'Economía de mercado, planificada y mixta',emoji:'⚖️',color:'#F59E0B'},{id:5,title:'Pensamiento Económico',desc:'Evolución histórica: del mercantilismo al keynesianismo',emoji:'💡',color:'#EC4899'}];
+  const progress=Math.round((Object.keys(s.visited).length/paradas.length)*100);
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><p style="font-size:14px;font-weight:600;color:#374151;margin:0">Tu recorrido por la unidad:</p><div style="display:flex;align-items:center;gap:8px"><div style="width:80px" class="progress-bar"><div class="progress-fill" style="width:${progress}%;background:linear-gradient(90deg,#6366F1,#EC4899)"></div></div><span style="font-size:12px;color:#6B7280;font-weight:600">${progress}%</span></div></div>`;
+  html+='<div style="position:relative;padding-left:24px"><div style="position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,#6366F1,#3B82F6,#10B981,#F59E0B,#EC4899);border-radius:3px"></div>';
+  paradas.forEach((p,i)=>{
+    const isAct=s.active===p.id, isVis=s.visited[p.id];
+    html+=`<div onclick="state.m1.active=${isAct?'null':p.id};state.m1.visited[${p.id}]=true;render();" style="position:relative;padding-left:28px;padding-bottom:${i<paradas.length-1?20:0}px;cursor:pointer">
+      <div style="position:absolute;left:-5px;top:4px;width:28px;height:28px;border-radius:50%;background:${isVis?p.color:'#fff'};border:3px solid ${p.color};display:flex;align-items:center;justify-content:center;font-size:${isVis?14:16}px;transition:all 0.3s;transform:${isAct?'scale(1.2)':'scale(1)'};box-shadow:${isAct?'0 0 12px '+p.color+'40':'none'}">${isVis?'✓':p.emoji}</div>
+      <div style="padding:10px 14px;border-radius:12px;background:${isAct?p.color+'08':'#F9FAFB'};border:${isAct?'1px solid '+p.color+'30':'1px solid transparent'};transition:all 0.3s">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:700;color:${p.color}">${p.emoji} Parada ${i+1}</span></div>
+        <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#1F2937">${p.title}</p>
+        ${isAct?`<p style="margin:6px 0 0;font-size:13px;color:#6B7280;animation:fadeSlideUp 0.3s ease">${p.desc}</p>`:''}
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+function renderM2Panoramica(){
+  const temas=[{title:'Bloque A',subtitle:'Fundamentos',items:['Definición de economía','Problema económico','Escasez y elección'],emoji:'🧱',color:'#6366F1'},{title:'Bloque B',subtitle:'Agentes y mercado',items:['Familias','Empresas','Estado','Mercado'],emoji:'🔄',color:'#10B981'},{title:'Bloque C',subtitle:'Historia del pensamiento',items:['Mercantilismo','Fisiocracia','Escuela clásica','Marxismo'],emoji:'📜',color:'#F59E0B'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">Vista panorámica de la unidad:</p><div style="display:flex;flex-direction:column;gap:10px">';
+  temas.forEach((t,i)=>{
+    const isExp=state['m2_'+i];
+    html+=`<div onclick="state['m2_${i}']=!state['m2_${i}'];render();" style="border-radius:14px;overflow:hidden;border:2px solid ${isExp?t.color:'#E5E7EB'};transition:all 0.3s;cursor:pointer">
+      <div style="padding:14px 18px;background:${isExp?'linear-gradient(135deg,'+t.color+','+t.color+'CC)':'#fff'};display:flex;align-items:center;justify-content:space-between;transition:all 0.3s">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">${t.emoji}</span><div><p style="margin:0;font-size:15px;font-weight:700;color:${isExp?'#fff':'#1F2937'}">${t.title}</p><p style="margin:2px 0 0;font-size:12px;color:${isExp?'rgba(255,255,255,0.8)':'#9CA3AF'}">${t.subtitle}</p></div></div>
+        <div style="background:${isExp?'rgba(255,255,255,0.2)':'#F3F4F6'};border-radius:8px;padding:4px 10px"><span style="font-size:12px;font-weight:700;color:${isExp?'#fff':'#6B7280'}">${t.items.length} temas</span></div>
+      </div>
+      ${isExp?`<div style="padding:12px 18px;background:#FAFAFA;animation:fadeSlideUp 0.3s ease"><div style="display:flex;flex-wrap:wrap;gap:6px">${t.items.map(it=>`<span style="padding:6px 14px;border-radius:10px;background:#fff;border:1px solid ${t.color}30;font-size:13px;font-weight:500;color:#374151;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:${t.color};flex-shrink:0"></span>${it}</span>`).join('')}</div></div>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+function renderM3Mental(){
+  const ramas=[{id:1,title:'¿Qué estudia?',items:['Recursos escasos','Necesidades ilimitadas','Toma de decisiones'],color:'#6366F1',emoji:'🔍'},{id:2,title:'¿Quiénes participan?',items:['Familias','Empresas','Estado'],color:'#10B981',emoji:'👥'},{id:3,title:'¿Cómo se organiza?',items:['Mercado','Precios','Oferta y demanda'],color:'#F59E0B',emoji:'⚙️'},{id:4,title:'¿De dónde viene?',items:['Mercantilismo','Fisiocracia','Clasicismo','Keynesianismo'],color:'#EC4899',emoji:'📚'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">Explorá las ramas del tema:</p>';
+  html+='<div style="display:flex;justify-content:center;margin-bottom:16px"><div style="padding:16px 24px;border-radius:20px;background:linear-gradient(135deg,#6366F1,#8B5CF6);box-shadow:0 4px 20px rgba(99,102,241,0.3)"><span style="font-size:24px">💰</span><span style="font-size:16px;font-weight:800;color:#fff;margin-left:8px">Economía</span></div></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ramas.forEach(r=>{
+    const isAct=state['m3_'+r.id];
+    html+=`<div onclick="state['m3_${r.id}']=!state['m3_${r.id}'];render();" style="padding:14px;border-radius:14px;border:2px solid ${isAct?r.color:'#E5E7EB'};background:${isAct?r.color+'08':'#fff'};cursor:pointer;transition:all 0.3s;transform:${isAct?'scale(1.02)':'scale(1)'}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${isAct?8:0}px"><span style="font-size:20px">${r.emoji}</span><span style="font-size:13px;font-weight:700;color:${r.color}">${r.title}</span></div>
+      ${isAct?`<div style="display:flex;flex-direction:column;gap:4px;animation:fadeSlideUp 0.3s ease">${r.items.map(it=>`<span style="font-size:12px;color:#374151;padding:4px 10px;border-radius:8px;background:#fff;border:1px solid ${r.color}20">• ${it}</span>`).join('')}</div>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+// ===== SEÑALES =====
+function renderSenales(){
+  return sectionHeader('🚦','SEÑALES','Conceptos clave que no te podés perder','linear-gradient(135deg,#F97316,#EA580C)')
+    +'<div class="section-body">'
+    +activityWrap('s1','🔑 Tarjetas Clave','Flip cards con definición, importancia y marcador de aprendido','Identificar','#F97316',renderS1Tarjetas(),true)
+    +activityWrap('s2','🚦 Semáforo Conceptual','Autoevaluá tu nivel en cada concepto clave','Evaluar','#EF4444',renderS2Semaforo())
+    +activityWrap('s3','📌 Muro de Post-its','Escribí cada concepto clave con tus propias palabras','Reformular','#F59E0B',renderS3PostIts())
+    +'</div>';
+}
+
+function renderS1Tarjetas(){
+  const conceptos=[
+    {term:'Escasez',def:'Los recursos son limitados frente a necesidades ilimitadas. Es EL problema central de la economía.',emoji:'⚠️',importancia:'Es la base de TODA la economía. Sin escasez, no habría economía.',color:'#EF4444'},
+    {term:'Costo de oportunidad',def:'Lo que dejás de obtener cuando elegís una opción sobre otra.',emoji:'🔀',importancia:'Cada decisión económica implica renunciar a algo. Siempre.',color:'#8B5CF6'},
+    {term:'Agentes económicos',def:'Familias, empresas y Estado: los tres actores que toman decisiones económicas.',emoji:'👥',importancia:'Todo lo que pasa en la economía lo generan estos tres actores.',color:'#3B82F6'},
+    {term:'Mercado',def:'Espacio (físico o virtual) donde se encuentran oferta y demanda.',emoji:'🤝',importancia:'Es el mecanismo central de asignación de recursos en el capitalismo.',color:'#10B981'}
+  ];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">Estos conceptos son IMPRESCINDIBLES:</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Tocá para ver la definición · ⭐ para marcar como aprendido</p><div style="display:flex;flex-direction:column;gap:10px">';
+  conceptos.forEach((c,i)=>{
+    const isFlip=state['s1_flip_'+i], isSaved=state['s1_save_'+i];
+    html+=`<div style="border-radius:14px;overflow:hidden;border:2px solid ${isSaved?c.color:'#E5E7EB'};transition:all 0.3s">
+      <div onclick="state['s1_flip_${i}']=!state['s1_flip_${i}'];render();" style="padding:14px 18px;background:${isFlip?c.color+'08':'#fff'};cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">${c.emoji}</span><div><span style="font-size:15px;font-weight:700;color:#1F2937">${c.term}</span>${isFlip?`<span style="font-size:11px;font-weight:700;color:${c.color};margin-left:8px;text-transform:uppercase;letter-spacing:1px">CLAVE</span>`:''}</div></div>
+        <button onclick="event.stopPropagation();state['s1_save_${i}']=!state['s1_save_${i}'];render();" style="background:none;border:none;font-size:22px;cursor:pointer;transform:${isSaved?'scale(1.2)':'scale(1)'};transition:transform 0.2s">${isSaved?'⭐':'☆'}</button>
+      </div>
+      ${isFlip?`<div style="padding:12px 18px;background:${c.color}05;border-top:1px solid ${c.color}15;animation:fadeSlideUp 0.3s ease">
+        <p style="margin:0 0 8px;font-size:14px;color:#374151;line-height:1.5">${c.def}</p>
+        <div style="padding:8px 12px;border-radius:10px;background:${c.color}10;border-left:3px solid ${c.color}">
+          <p style="margin:0;font-size:13px;font-weight:600;color:${c.color}">🔑 ¿Por qué es clave?</p>
+          <p style="margin:4px 0 0;font-size:13px;color:#374151">${c.importancia}</p>
+        </div>
+      </div>`:''}
+    </div>`;
+  });
+  html+='</div><div style="margin-top:12px;text-align:center"><span style="font-size:13px;color:#6B7280">⭐ Marcados: '+[0,1,2,3].filter(i=>state['s1_save_'+i]).length+'/'+conceptos.length+'</span></div>';
+  return html;
+}
+
+function renderS2Semaforo(){
+  const conceptos=[{term:'Escasez',emoji:'⚠️'},{term:'Costo de oportunidad',emoji:'🔀'},{term:'Agentes económicos',emoji:'👥'},{term:'Mercado',emoji:'🤝'},{term:'Oferta y demanda',emoji:'📊'}];
+  const colores=[{label:'🟢 Lo tengo claro',color:'#10B981',bg:'#D1FAE5'},{label:'🟡 Más o menos',color:'#F59E0B',bg:'#FEF3C7'},{label:'🔴 No lo entiendo',color:'#EF4444',bg:'#FEE2E2'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">¿Cómo estás con cada concepto clave?</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Asigná un color a cada concepto</p><div style="display:flex;flex-direction:column;gap:8px">';
+  conceptos.forEach((c,i)=>{
+    const lvl=state['s2_'+i];
+    html+=`<div style="padding:10px 14px;border-radius:12px;border:1px solid #E5E7EB;background:${lvl!==undefined?colores[lvl].bg+'40':'#fff'};display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all 0.3s">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">${c.emoji}</span><span style="font-size:14px;font-weight:600;color:#1F2937">${c.term}</span></div>
+      <div style="display:flex;gap:4px">${colores.map((col,j)=>`<button onclick="state['s2_${i}']=${j};render();" style="width:28px;height:28px;border-radius:50%;border:${lvl===j?'3px solid '+col.color:'2px solid #D1D5DB'};background:${lvl===j?col.bg:'#F9FAFB'};cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;transform:${lvl===j?'scale(1.2)':'scale(1)'}">${['🟢','🟡','🔴'][j]}</button>`).join('')}</div>
+    </div>`;
+  });
+  html+='</div>';
+  const allDone=conceptos.every((_,i)=>state['s2_'+i]!==undefined);
+  if(allDone){
+    const g=conceptos.filter((_,i)=>state['s2_'+i]===0).length;
+    const y=conceptos.filter((_,i)=>state['s2_'+i]===1).length;
+    const r=conceptos.filter((_,i)=>state['s2_'+i]===2).length;
+    html+=`<div style="margin-top:14px;padding:12px 16px;border-radius:12px;background:#F0FDF4;border:1px solid #BBF7D0;animation:fadeSlideUp 0.3s ease">
+      <p style="margin:0;font-size:13px;color:#065F46;font-weight:600">📊 Tu resumen: <span style="color:#10B981">${g}🟢</span> <span style="color:#F59E0B">${y}🟡</span> <span style="color:#EF4444">${r}🔴</span></p>
+      ${r>0?'<p style="margin:6px 0 0;font-size:12px;color:#92400E">💪 Los conceptos en rojo necesitan más atención. ¡Volvé al Núcleo!</p>':''}
+    </div>`;
+  }
+  return html;
+}
+
+function renderS3PostIts(){
+  if(!state.s3) state.s3={n1:'',n2:'',n3:'',n4:''};
+  const s=state.s3;
+  const ckeys=['Escasez','Costo de oportunidad','Agentes económicos','Mercado'];
+  const colors=['#FEF3C7','#DBEAFE','#FCE7F3','#D1FAE5'];
+  const filled=Object.values(s).filter(v=>v.trim().length>5).length;
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">Escribí con tus palabras cada concepto clave:</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Un post-it por concepto. ¡Como si se lo explicaras a un amigo!</p>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ['n1','n2','n3','n4'].forEach((k,i)=>{
+    html+=`<div style="padding:12px;border-radius:12px;background:${colors[i]};border:1px solid rgba(0,0,0,0.06);transform:rotate(${i%2===0?-1:1}deg);box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px">📌 ${ckeys[i]}</p>
+      <textarea oninput="state.s3.${k}=this.value;" placeholder="Explicalo con tus palabras..." style="min-height:60px;padding:8px;border:none;background:rgba(255,255,255,0.6);font-size:13px;border-radius:8px">${s[k]}</textarea>
+    </div>`;
+  });
+  html+='</div>';
+  html+=`<div style="margin-top:12px;display:flex;align-items:center;gap:10px"><div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${(filled/4)*100}%;background:linear-gradient(90deg,#6366F1,#EC4899)"></div></div><span style="font-size:12px;color:#6B7280;font-weight:600">${filled}/4</span></div>`;
+  return html;
+}
+// ===== RELECTURA =====
+function renderRelectura(){
+  return sectionHeader('📖','RELECTURA','Volvé al PDF con actividades de alto nivel cognitivo','linear-gradient(135deg,#7C3AED,#6D28D9)')
+    +'<div class="section-body">'
+    +activityWrap('r1','⚖️ Tribunal Económico','Elegí un rol y argumentá con evidencia del texto','Juzgar','#7C3AED',renderR1Tribunal(),true)
+    +activityWrap('r2','🎯 Constructor de Tesis','Formulá una tesis con evidencias y conclusión','Crear','#EC4899',renderR2Tesis())
+    +activityWrap('r3','🔬 Crítica Fundamentada','Analizá fortalezas, debilidades y generá preguntas','Criticar','#EF4444',renderR3Critica())
+    +'</div>';
+}
+
+function renderR1Tribunal(){
+  if(!state.r1) state.r1={rol:null,args:'',sub:false};
+  const s=state.r1;
+  const roles=[{id:'favor',label:'A FAVOR',emoji:'🟢',color:'#10B981',desc:'Defendé la intervención del Estado con argumentos del texto'},{id:'contra',label:'EN CONTRA',emoji:'🔴',color:'#EF4444',desc:'Argumentá por qué el mercado debe regularse solo'},{id:'juez',label:'JUEZ/A',emoji:'👨‍⚖️',color:'#8B5CF6',desc:'Analizá ambas posturas y dá un veredicto equilibrado'}];
+  const wc=s.args.trim().split(/\s+/).filter(Boolean).length;
+  const quality=wc>=50?{t:'🌟 Argumentación sólida',c:'#065F46',bg:'#D1FAE5'}:wc>=30?{t:'👍 Buen desarrollo',c:'#92400E',bg:'#FEF3C7'}:wc>=10?{t:'💪 Seguí desarrollando',c:'#1E40AF',bg:'#DBEAFE'}:{t:'✏️ Necesitás más argumentos',c:'#991B1B',bg:'#FEE2E2'};
+
+  let html=`<div style="padding:14px 18px;border-radius:14px;background:linear-gradient(135deg,#F5F3FF,#EDE9FE);margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font-size:28px">⚖️</span><div><p style="margin:0;font-size:16px;font-weight:700;color:#4338CA">El Estado debe intervenir en la economía</p><p style="margin:4px 0 0;font-size:13px;color:#6B7280">Imaginá que sos parte de un tribunal económico. Leé el PDF y elegí un rol.</p></div></div>
+  </div>`;
+  html+='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 10px">Elegí tu rol:</p><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">';
+  roles.forEach(r=>{
+    const isSel=s.rol===r.id;
+    html+=`<div onclick="state.r1.rol='${r.id}';state.r1.sub=false;render();" style="padding:12px 16px;border-radius:12px;border:${isSel?'2px solid '+r.color:'2px solid #E5E7EB'};background:${isSel?r.color+'08':'#fff'};cursor:pointer;transition:all 0.25s;display:flex;align-items:center;gap:12px;transform:${isSel?'scale(1.02)':'scale(1)'}">
+      <span style="font-size:22px">${r.emoji}</span><div><span style="font-size:14px;font-weight:700;color:${isSel?r.color:'#374151'}">${r.label}</span><p style="margin:2px 0 0;font-size:12px;color:#6B7280">${r.desc}</p></div>
+    </div>`;
+  });
+  html+='</div>';
+  if(s.rol){
+    const selRole=roles.find(r=>r.id===s.rol);
+    html+=`<div style="animation:fadeSlideUp 0.3s ease">
+      <textarea oninput="state.r1.args=this.value;state.r1.sub=false;" placeholder="Escribí tus argumentos basándote en lo que leíste en el PDF... Usá citas, datos y razonamientos del texto." style="border-color:${selRole.color}40;min-height:120px">${s.args}</textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <span style="font-size:12px;color:#9CA3AF">${wc} palabras</span>
+        <div style="display:flex;gap:4px">${[20,35,50].map(t=>`<div style="width:20px;height:4px;border-radius:4px;background:${wc>=t?'#10B981':'#E5E7EB'};transition:all 0.3s"></div>`).join('')}</div>
+      </div>
+      <button class="btn-primary" onclick="state.r1.sub=true;render();" ${wc<10?'disabled':''}>Presentar argumentación</button>
+      ${s.sub?`<div class="feedback" style="background:${quality.bg}"><p style="margin:0;font-size:14px;font-weight:600;color:${quality.c}">${quality.t}</p></div>`:''}
+    </div>`;
+  }
+  return html;
+}
+
+function renderR2Tesis(){
+  if(!state.r2) state.r2={tesis:'',ev1:'',ev2:'',concl:'',sub:false};
+  const s=state.r2;
+  const filled=[s.tesis,s.ev1,s.ev2,s.concl].filter(v=>v.trim().length>10).length;
+  const steps=[{key:'tesis',label:'Tu tesis (afirmación central)',color:'#6366F1',ph:'Escribí tu afirmación principal...'},{key:'ev1',label:'Evidencia 1 (del texto)',color:'#3B82F6',ph:'¿Qué dato o argumento del PDF apoya tu tesis?'},{key:'ev2',label:'Evidencia 2 (del texto)',color:'#10B981',ph:'¿Qué otro dato o ejemplo refuerza tu postura?'},{key:'concl',label:'Conclusión',color:'#EC4899',ph:'Cerrá tu argumento con una reflexión final...'}];
+
+  let html=`<div style="padding:14px 18px;border-radius:14px;background:linear-gradient(135deg,#FEF3C7,#FDE68A);margin-bottom:14px"><p style="margin:0;font-size:14px;font-weight:600;color:#92400E"><span style="font-size:18px">🎯</span> A partir de la lectura del PDF, formulá una tesis sobre la relación entre los sistemas económicos y el bienestar de la sociedad.</p></div>`;
+  html+='<div style="display:flex;flex-direction:column;gap:12px">';
+  steps.forEach((st,i)=>{
+    const val=s[st.key];
+    html+=`<div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="width:28px;height:28px;border-radius:50%;background:${st.color};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">${i+1}</span>
+        <span style="font-size:14px;font-weight:700;color:${st.color}">${st.label}</span>
+      </div>
+      <textarea oninput="state.r2.${st.key}=this.value;state.r2.sub=false;" placeholder="${st.ph}" style="border-color:${st.color}30;min-height:60px">${val}</textarea>
+    </div>`;
+  });
+  html+='</div>';
+  html+=`<div style="margin-top:14px;display:flex;align-items:center;gap:10px"><div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${(filled/4)*100}%;background:linear-gradient(90deg,#6366F1,#EC4899)"></div></div><span style="font-size:12px;color:#6B7280;font-weight:600">${filled}/4</span></div>`;
+  html+=`<button class="btn-primary" onclick="state.r2.sub=true;render();" ${filled<2?'disabled':''}>Enviar tesis</button>`;
+  if(s.sub) html+=`<div class="feedback" style="background:${filled>=3?'#D1FAE5':'#FEF3C7'};text-align:center"><p style="margin:0;font-size:14px;font-weight:600;color:${filled>=3?'#065F46':'#92400E'}">${filled>=4?'🌟 ¡Tesis completa y bien estructurada!':filled>=3?'🎉 ¡Muy bien! Intentá completar todos los pasos.':'👍 Buen inicio. Seguí desarrollando las evidencias.'}</p></div>`;
+  return html;
+}
+
+function renderR3Critica(){
+  if(!state.r3) state.r3={fortaleza:'',debilidad:'',pregunta:'',propuesta:'',sub:false};
+  const s=state.r3;
+  const filled=[s.fortaleza,s.debilidad,s.pregunta,s.propuesta].filter(v=>v.trim().length>10).length;
+  const fields=[{key:'fortaleza',label:'💪 Una fortaleza del texto',ph:'¿Qué aspecto está bien explicado o argumentado?',color:'#10B981'},{key:'debilidad',label:'⚡ Una debilidad o limitación',ph:'¿Qué falta, qué podría mejorarse o qué no queda claro?',color:'#EF4444'},{key:'pregunta',label:'❓ Una pregunta que te genera',ph:'¿Qué te quedaste pensando? ¿Qué investigarías más?',color:'#F59E0B'},{key:'propuesta',label:'💡 Tu propuesta o reflexión',ph:'Si pudieras agregar algo al texto, ¿qué sería?',color:'#8B5CF6'}];
+
+  let html=`<div style="padding:14px 18px;border-radius:14px;background:linear-gradient(135deg,#FEE2E2,#FECACA);margin-bottom:14px"><p style="margin:0;font-size:14px;font-weight:600;color:#991B1B"><span style="font-size:18px">🔬</span> Releé el texto con ojo crítico y completá este análisis:</p></div>`;
+  html+='<div style="display:flex;flex-direction:column;gap:12px">';
+  fields.forEach(f=>{
+    html+=`<div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:13px;font-weight:700;color:${f.color}">${f.label}</span></div>
+      <textarea oninput="state.r3.${f.key}=this.value;state.r3.sub=false;" placeholder="${f.ph}" style="border-color:${f.color}40;min-height:65px">${s[f.key]}</textarea>
+    </div>`;
+  });
+  html+='</div>';
+  html+=`<div style="margin-top:14px;display:flex;align-items:center;gap:10px"><div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${(filled/4)*100}%;background:linear-gradient(90deg,#EF4444,#F59E0B,#10B981)"></div></div><span style="font-size:12px;color:#6B7280;font-weight:600">${filled}/4</span></div>`;
+  html+=`<button class="btn-primary" onclick="state.r3.sub=true;render();" ${filled<2?'disabled':''}>Enviar análisis crítico</button>`;
+  if(s.sub) html+=`<div class="feedback" style="background:${filled>=3?'#D1FAE5':'#FEF3C7'};text-align:center"><p style="margin:0;font-size:14px;font-weight:600;color:${filled>=3?'#065F46':'#92400E'}">${filled>=4?'🌟 ¡Análisis crítico completo! Excelente pensamiento.':filled>=3?'🎉 ¡Muy buen análisis!':'👍 Buen inicio, completá más campos.'}</p></div>`;
+  return html;
+}
+
+// ===== INIT =====
+render();
+</script>
+</body>
+</html>

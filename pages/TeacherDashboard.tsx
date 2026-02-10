@@ -137,32 +137,88 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/50">
-              {students.map(student => {
-                const count = progressRecords.filter(p => p.user_id === student.id).length;
-                const percent = Math.min(100, count * 5); // Simplificación
-                return (
-                  <tr key={student.id} className="hover:bg-white/5 transition-all">
-                    <td className="px-10 py-10">
-                      <div className="font-bold text-white text-lg">{student.full_name}</div>
-                      <div className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">ID: {student.id.slice(0,8)}</div>
-                    </td>
-                    <td className="px-10 py-10 text-center text-xs font-black text-slate-400 uppercase tracking-widest">{student.course_id || 'PENDIENTE'}</td>
-                    <td className="px-10 py-10">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-full max-w-[140px] bg-black/40 h-2.5 rounded-full overflow-hidden border border-slate-700">
-                          <div className={`h-full transition-all duration-1000 ${percent > 70 ? 'bg-emerald-500' : percent > 30 ? 'bg-sky-400' : 'bg-rose-500'}`} style={{ width: `${percent}%` }}></div>
-                        </div>
-                        <span className="text-[10px] font-black text-white">{percent}% de la materia</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-10 text-right">
-                      <button className="text-[9px] font-black text-white uppercase tracking-widest border-2 border-slate-600 px-6 py-3 rounded-2xl hover:bg-white hover:text-black hover:border-white transition-all">Ver Notas</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
+<tbody className="divide-y divide-slate-700/50">
+  {students.map((student: any) => {
+    // =========================
+    // 1) Nombre visible del alumno
+    //    - Tu Profile tiene first_name / last_name (NO full_name)
+    //    - Fallback: email -> ID corto
+    // =========================
+    const firstName = String(student?.first_name || "").trim();
+    const lastName = String(student?.last_name || "").trim();
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    const email = String(student?.email || "").trim();
+    const shortId = String(student?.id || "").slice(0, 8);
+
+    // Línea secundaria opcional (si tenés dni/city en profiles)
+    const dni = String(student?.dni || "").trim();
+    const city = String(student?.city || "").trim();
+    const line2 = [dni ? `DNI ${dni}` : "", city].filter(Boolean).join(" · ");
+
+    // =========================
+    // 2) Progreso del alumno (simple)
+    // =========================
+    const count = progressRecords.filter((p: any) => String(p.user_id) === String(student.id)).length;
+    const percent = Math.min(100, count * 5); // Simplificación actual
+
+    return (
+      <tr key={student.id} className="hover:bg-white/5 transition-all">
+        {/* =========================
+            ALUMNO
+           ========================= */}
+        <td className="px-10 py-10">
+          <div className="font-bold text-white text-lg">
+            {fullName || email || `Alumno (${shortId})`}
+          </div>
+
+          {/* Segunda línea: datos útiles (si existen) */}
+          {line2 ? (
+            <div className="text-slate-400 text-xs mt-1">{line2}</div>
+          ) : (
+            <div className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">
+              ID: {shortId}
+            </div>
+          )}
+        </td>
+
+        {/* =========================
+            CURSO
+           ========================= */}
+        <td className="px-10 py-10 text-center text-xs font-black text-slate-400 uppercase tracking-widest">
+          {student.course_id || "PENDIENTE"}
+        </td>
+
+        {/* =========================
+            AVANCE LECTURA
+           ========================= */}
+        <td className="px-10 py-10">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-full max-w-[140px] bg-black/40 h-2.5 rounded-full overflow-hidden border border-slate-700">
+              <div
+                className={`h-full transition-all duration-1000 ${
+                  percent > 70 ? "bg-emerald-500" : percent > 30 ? "bg-sky-400" : "bg-rose-500"
+                }`}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-black text-white">{percent}% de la materia</span>
+          </div>
+        </td>
+
+        {/* =========================
+            ACCIONES
+           ========================= */}
+        <td className="px-10 py-10 text-right">
+          <button className="text-[9px] font-black text-white uppercase tracking-widest border-2 border-slate-600 px-6 py-3 rounded-2xl hover:bg-white hover:text-black hover:border-white transition-all">
+            Ver Notas
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+
           </table>
         </div>
       )}

@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { BlockContent } from '../types';
-import { BLOCK_STYLES } from '../constants';
+import React, { useMemo, useState } from "react";
+import { BlockContent } from "../types";
+import { BLOCK_STYLES } from "../constants";
+import { ActivityRenderer } from "./ActivityRenderer";
+import { ActivityPlayer } from "./ActivityPlayer";
 
 interface BlockCardProps {
   block: BlockContent;
@@ -12,45 +14,67 @@ interface BlockCardProps {
 const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggleVisit }) => {
   const [isOpen, setIsOpen] = useState(index === 0);
 
-  const type = String((block as any)?.type ?? '').toUpperCase(); // ✅ normaliza tipo
+  // =========================
+  // 1) Tipo + estilos por tipo
+  // =========================
+  const type = String((block as any)?.type ?? "").toUpperCase();
   const styles =
     (BLOCK_STYLES as any)[type] ?? {
-      color: 'bg-slate-700/40',
-      label: type || 'BLOQUE',
+      color: "bg-slate-700/40",
+      label: type || "BLOQUE",
       icon: (
         <svg className="w-5 h-5 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v12m6-6H6" />
         </svg>
-      )
+      ),
     };
 
-  // ✅ MAPA: soporta map_items (nuevo) o topics (viejo)
+  // =========================
+  // 2) MAPA: map_items (nuevo) o topics (viejo)
+  // =========================
   const mapaItems = useMemo(() => {
     const mi = (block as any)?.map_items;
     if (Array.isArray(mi) && mi.length) return mi;
 
     const topics = (block as any)?.topics;
     if (Array.isArray(topics) && topics.length) {
-      // adaptamos topics → estructura parecida a map_items
       return topics.map((t: any, i: number) => ({
         id: t?.id ?? `t${i + 1}`,
         label: t?.title ?? `Tema ${i + 1}`,
         minutes: t?.minutes,
         target: t?.target,
-        note: t?.note
+        note: t?.note,
       }));
     }
     return [];
   }, [block]);
 
+  // =========================
+  // 3) ACTIVITIES (para no reventar)
+  // =========================
+  const activities: any[] = useMemo(() => {
+    const a = (block as any)?.activities;
+    return Array.isArray(a) ? a : [];
+  }, [block]);
+
+  const bodyId = `block-body-${index}`;
+
   return (
     <div
-      className={`mb-4 border rounded-2xl overflow-hidden transition-all duration-200
-      bg-slate-900/40 border-slate-800
-      ${isOpen ? 'ring-1 ring-slate-700 shadow-2xl' : 'hover:bg-white/5'}`}
+      className={[
+        "mb-4 border rounded-2xl overflow-hidden transition-all duration-200",
+        "bg-slate-900/40 border-slate-800",
+        isOpen ? "ring-1 ring-slate-700 shadow-2xl" : "hover:bg-white/5",
+      ].join(" ")}
     >
       {/* HEADER */}
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full text-left p-5 flex items-center justify-between gap-4">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls={bodyId}
+        className="w-full text-left p-5 flex items-center justify-between gap-4"
+      >
         <div className="flex items-center gap-4">
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${styles.color} flex-shrink-0`}>
             {styles.icon}
@@ -58,7 +82,9 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
 
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Paso {index + 1}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Paso {index + 1}
+              </span>
 
               {isVisited && (
                 <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
@@ -70,12 +96,12 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
               )}
             </div>
 
-            <h3 className="font-bold text-white leading-tight">{(block as any)?.title ?? '(Sin título)'}</h3>
+            <h3 className="font-bold text-white leading-tight">{(block as any)?.title ?? "(Sin título)"}</h3>
           </div>
         </div>
 
         <svg
-          className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -86,17 +112,19 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
 
       {/* BODY */}
       {isOpen && (
-        <div className="px-5 pb-6 pt-0">
+        <div id={bodyId} className="px-5 pb-6 pt-0">
           <div className="max-w-none">
-            {/* ✅ CONTENT SIEMPRE visible (fallback si viene vacío) */}
+            {/* CONTENT */}
             <div className="whitespace-pre-wrap leading-relaxed text-slate-200">
-              {String((block as any)?.content ?? '').trim() || '—'}
+              {String((block as any)?.content ?? "").trim() || "—"}
             </div>
 
-            {/* ✅ UMBRAL: prompts + connection_task */}
+            {/* UMBRAL */}
             {Array.isArray((block as any)?.prompts) && (block as any).prompts.length > 0 && (
               <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Preguntas para abrir</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Preguntas para abrir
+                </div>
                 <ul className="mt-3 space-y-2 text-sm text-slate-200">
                   {(block as any).prompts.map((p: any, i: number) => (
                     <li key={p?.id ?? i} className="flex gap-3">
@@ -110,15 +138,17 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
 
             {(block as any)?.connection_task?.prompt && (
               <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/30 p-5">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Conexión con la realidad</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Conexión con la realidad
+                </div>
                 <div className="mt-2 text-sm text-slate-200 whitespace-pre-wrap">
                   {(block as any).connection_task.prompt}
                 </div>
               </div>
             )}
 
-            {/* ✅ MAPA: map_items / topics */}
-            {type === 'MAPA' && mapaItems.length > 0 && (
+            {/* MAPA */}
+            {type === "MAPA" && mapaItems.length > 0 && (
               <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hoja de ruta</div>
 
@@ -147,7 +177,9 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
 
                 {Array.isArray((block as any)?.habits_checklist) && (block as any).habits_checklist.length > 0 && (
                   <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900/20 p-4">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Checklist de hábitos</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      Checklist de hábitos
+                    </div>
                     <ul className="mt-3 space-y-2 text-sm text-slate-200">
                       {(block as any).habits_checklist.map((h: string, i: number) => (
                         <li key={i} className="flex gap-3">
@@ -161,62 +193,37 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
               </div>
             )}
 
-            {/* ✅ NUCLEO: activities */}
-            {type === 'NUCLEO' && Array.isArray((block as any)?.activities) && (block as any).activities.length > 0 && (
-              <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Actividades (con el PDF abierto)</div>
-
+            {/* ACTIVITIES PLAYER (si querés usar ActivityPlayer para actividades “jugables”) */}
+            {Array.isArray(activities) && activities.length > 0 && (
+              <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/20 p-5">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Interacciones
+                </div>
                 <div className="mt-4 space-y-4">
-                  {(block as any).activities.map((a: any, i: number) => (
-                    <div key={a?.id ?? i} className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="text-sm font-bold text-white leading-snug">{a?.title ?? `Actividad ${i + 1}`}</div>
-                        {a?.kind && (
-                          <div className="text-[10px] font-black uppercase tracking-widest text-slate-300 bg-slate-500/10 border border-slate-500/20 px-2 py-1 rounded-full whitespace-nowrap">
-                            {a.kind}
-                          </div>
-                        )}
-                      </div>
-
-                      {a?.instructions && (
-                        <div className="mt-2 text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
-                          {a.instructions}
-                        </div>
-                      )}
-
-                      {Array.isArray(a?.questions) && a.questions.length > 0 && (
-                        <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                          {a.questions.map((q: any, qi: number) => (
-                            <li key={q?.id ?? qi} className="flex gap-3">
-                              <span className="text-slate-500">{qi + 1}.</span>
-                              <span>{q?.prompt}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      {a?.text && <div className="mt-3 text-sm text-slate-200 whitespace-pre-wrap">{a.text}</div>}
-
-                      {Array.isArray(a?.bank) && a.bank.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {a.bank.map((w: string, wi: number) => (
-                            <span
-                              key={wi}
-                              className="text-xs text-slate-200 bg-slate-800/60 border border-slate-700 px-2 py-1 rounded-full"
-                            >
-                              {w}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  {activities.map((a: any, i: number) => (
+                    <ActivityPlayer key={a?.id ?? i} a={a} index={i} />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* ✅ SENALES: signals */}
-            {type === 'SENALES' && Array.isArray((block as any)?.signals) && (block as any).signals.length > 0 && (
+            {/* NUCLEO: ahora renderiza por kind */}
+            {type === "NUCLEO" && Array.isArray((block as any)?.activities) && (block as any).activities.length > 0 && (
+              <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Actividades (con el PDF abierto)
+                </div>
+
+                <div className="mt-4 space-y-4">
+                  {(block as any).activities.map((a: any, i: number) => (
+                    <ActivityRenderer key={a?.id ?? i} a={a} index={i} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SENALES */}
+            {type === "SENALES" && Array.isArray((block as any)?.signals) && (block as any).signals.length > 0 && (
               <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Señales clave</div>
 
@@ -224,7 +231,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
                   {(block as any).signals.map((s: any, i: number) => (
                     <div key={s?.id ?? i} className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
                       <div className="flex items-start gap-3">
-                        <div className="text-lg">{s?.icon ?? '🎯'}</div>
+                        <div className="text-lg">{s?.icon ?? "🎯"}</div>
                         <div>
                           <div className="text-sm font-bold text-white">{s?.concept}</div>
                           <div className="mt-1 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{s?.why}</div>
@@ -239,8 +246,8 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
               </div>
             )}
 
-            {/* ✅ SABIAS: facts */}
-            {type === 'SABIAS' && Array.isArray((block as any)?.facts) && (block as any).facts.length > 0 && (
+            {/* SABIAS */}
+            {type === "SABIAS" && Array.isArray((block as any)?.facts) && (block as any).facts.length > 0 && (
               <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">¿Lo sabías?</div>
 
@@ -248,7 +255,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
                   {(block as any).facts.map((f: any, i: number) => (
                     <div key={f?.id ?? i} className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
                       <div className="flex items-start gap-3">
-                        <div className="text-lg">{f?.icon ?? '💡'}</div>
+                        <div className="text-lg">{f?.icon ?? "💡"}</div>
                         <div>
                           <div className="text-sm font-bold text-white">{f?.title}</div>
                           <div className="mt-2 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{f?.text}</div>
@@ -267,9 +274,6 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
                 )}
               </div>
             )}
-
-            {/* ✅ DEBUG (temporal): si querés ver qué llega realmente */}
-            {/* <pre className="mt-4 text-xs text-slate-500 whitespace-pre-wrap">{JSON.stringify(block, null, 2)}</pre> */}
           </div>
 
           {/* FOOTER */}
@@ -278,7 +282,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, index, isVisited, onToggle
               <input
                 type="checkbox"
                 checked={isVisited}
-                onChange={onToggleVisit}
+                onChange={() => onToggleVisit()}
                 className="w-5 h-5 rounded border-slate-600 bg-slate-950 text-sky-500 focus:ring-sky-500/30 transition-colors"
               />
               <span className="text-sm font-medium text-slate-400 group-hover:text-white">Marcar como realizado</span>

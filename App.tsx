@@ -15,10 +15,11 @@ import {
   Assessment,
 } from "./types";
 import { supabase, isSupabaseConfigured } from "./supabase";
-
+import ActivityStudio from "./pages/ActivityStudio";
 import Layout from "./components/Layout";
 import Auth from "./components/Auth";
-
+import FloatingPlayButton from "./components/FloatingPlayButton";
+import JugamosPage from "./pages/JugamosPage";
 import CampusHome from "./pages/CampusHome";
 import SubjectPage from "./pages/SubjectPage";
 import UnitPage from "./pages/UnitPage";
@@ -92,8 +93,10 @@ const App: React.FC = () => {
 // =========================
 
 const [view, setView] = useState<
-  "home" | "subject" | "unit" | "teacher" | "student" | "profile"
+  "home" | "subject" | "unit" | "teacher" | "student" | "profile" | "studio" | "jugamos"
 >("home");
+
+
 
 // 🔥 subject.id en DB es int8 → number en frontend
 const [activeSubjectId, setActiveSubjectId] = useState<number | null>(null);
@@ -659,7 +662,7 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
 };
 
 
-  // =========================
+   // =========================
   // RENDER
   // =========================
   return (
@@ -673,6 +676,9 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
         }
       }}
     >
+      {/* =========================
+          HOME (pantalla principal)
+         ========================= */}
       {view === "home" && (
         <CampusHome
           userRole={currentUser?.profile.role}
@@ -688,42 +694,50 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
         />
       )}
 
-    {view === "subject" && activeSubjectId !== null && (
+      {/* =========================
+          SUBJECT (materia)
+         ========================= */}
+      {view === "subject" && activeSubjectId !== null && (
         <SubjectPage
-        // ✅ subjects.id es number -> comparación directa
-        subject={subjects.find((s) => s.id === activeSubjectId)!}
-        // ✅ isApproved ahora recibe number
-        isApproved={isApproved(activeSubjectId)}
-        // ✅ course_id debe ser number | null
-         userCourseId={currentUser?.profile.course_id ?? null}
-        // ✅ unit.subject_id hoy en tu JSON es string -> comparamos como string
-        availableUnits={Object.values(unitsMap).filter(
+          // ✅ subjects.id es number -> comparación directa
+          subject={subjects.find((s) => s.id === activeSubjectId)!}
+          // ✅ isApproved ahora recibe number
+          isApproved={isApproved(activeSubjectId)}
+          // ✅ course_id debe ser number | null
+          userCourseId={currentUser?.profile.course_id ?? null}
+          // ✅ unit.subject_id en tu JSON es string -> comparamos como string
+          availableUnits={Object.values(unitsMap).filter(
             (u: any) => String(u.subject_id) === String(activeSubjectId) && (u.isAvailable ?? true)
-            )}
-            onSelectUnit={(id) => {
-          // ✅ unit id es string
-          setActiveUnitId(String(id));
-         setView("unit");
+          )}
+          onSelectUnit={(id) => {
+            // ✅ unit id es string (unit.id del JSON: ej "10-u1")
+            setActiveUnitId(String(id));
+            setView("unit");
           }}
-         onBack={() => setView("home")}
-          />
-      )}
-
-
-      {view === "unit" && activeUnitId && (
-        <UnitPage
-          unit={unitsMap[String(activeUnitId)]}
-          progress={userProgress.filter(
-  (p: any) =>
-    String(p.user_id) === String(currentUser?.id) &&
-    String((p as any).unit_id) === String(activeUnitId)
-)}
-
-          onUpdateProgress={handleUpdateProgress}
-          onBack={() => setView("subject")}
+          onBack={() => setView("home")}
         />
       )}
 
+ {/* =========================
+    UNIT (unidad)
+   ========================= */}
+{view === "unit" && activeUnitId && (
+  <UnitPage
+    unit={unitsMap[String(activeUnitId)]}
+    progress={userProgress.filter(
+      (p: any) =>
+        String(p.user_id) === String(currentUser?.id) &&
+        String((p as any).unit_id) === String(activeUnitId)
+    )}
+    onUpdateProgress={handleUpdateProgress}
+    onBack={() => setView("subject")}
+  />
+)}
+
+
+      {/* =========================
+          TEACHER
+         ========================= */}
       {view === "teacher" && (
         <TeacherDashboard
           subjects={subjects}
@@ -741,6 +755,9 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
         />
       )}
 
+      {/* =========================
+          PROFILE (completar perfil)
+         ========================= */}
       {view === "profile" && (
         <CompleteProfile
           user={currentUser!}
@@ -753,6 +770,9 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
         />
       )}
 
+      {/* =========================
+          STUDENT DASHBOARD
+         ========================= */}
       {view === "student" && (
         <StudentDashboard
           user={currentUser!}
@@ -765,17 +785,21 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
             const raw = String(id);
             const isNumeric = /^\d+$/.test(raw);
 
+            // Si ya viene numérico, lo usamos directo
             if (isNumeric) {
               setActiveSubjectId(raw);
               setView("subject");
               return;
             }
 
+            // Si viene como nombre, buscamos coincidencia por "name"
             const normalize = (s: string) =>
               s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
             const wanted = normalize(raw);
-            const found = subjects.find((s: any) => normalize(String((s as any).name || "")) === wanted);
+            const found = subjects.find(
+              (s: any) => normalize(String((s as any).name || "")) === wanted
+            );
 
             if (!found) {
               setActiveSubjectId(raw);
@@ -789,11 +813,40 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
         />
       )}
 
-      {/* FAB switch teacher/student */}
+{/* =========================
+    ACTIVITY STUDIO (solo docente)
+   ========================= */}
+{view === "studio" && (
+  <ActivityStudio
+    onBack={() => setView(currentUser?.profile.role === UserRole.TEACHER ? "teacher" : "home")}
+  />
+)}
+
+
+{/* =========================
+    FAB lateral
+    DOCENTE: 🧪 Activity Studio
+    ALUMNO: 🎮 Jugamos
+   ========================= */}
+{currentUser?.profile.role === UserRole.TEACHER ? (
+  <button
+    onClick={() => setView("studio")}
+    className="fixed bottom-8 right-28 p-4 bg-slate-800 rounded-3xl shadow-2xl z-50 hover:scale-110 active:scale-95 transition-all border border-slate-700"
+    title="Activity Studio"
+  >
+    <span className="text-white text-xl">🧪</span>
+  </button>
+) : (
+  <FloatingPlayButton onClick={() => setView("jugamos")} />
+)}
+
+
+
+      {/* =========================
+          FAB switch teacher/student
+         ========================= */}
       <button
-        onClick={() =>
-          setView(currentUser?.profile.role === UserRole.TEACHER ? "teacher" : "student")
-        }
+        onClick={() => setView(currentUser?.profile.role === UserRole.TEACHER ? "teacher" : "student")}
         className="fixed bottom-8 right-8 p-5 bg-sky-500 rounded-3xl shadow-2xl z-50 hover:scale-110 active:scale-95 transition-all border-4 border-slate-900 group"
       >
         <svg
@@ -811,13 +864,24 @@ const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
         </svg>
       </button>
 
-      {/* Toast */}
+      {/* =========================
+          Toast
+         ========================= */}
       {toast && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-sky-500 text-black font-black text-xs uppercase tracking-widest px-6 py-3 rounded-2xl shadow-2xl border-4 border-slate-900 z-[999]">
           ✅ {toast}
+
+          
         </div>
       )}
+
+      {/* =========================
+    JUGAMOS 🎮 (solo alumno)
+   ========================= */}
+{view === "jugamos" && <JugamosPage />}
+
     </Layout>
+   
   );
 };
 

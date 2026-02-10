@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Cuaderno Vivo — Parte 1</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'DM Sans',sans-serif;}
+body{min-height:100vh;background:linear-gradient(180deg,#F8FAFC 0%,#EEF2FF 50%,#F0FDF4 100%);padding:20px 16px;}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(-120px) translateX(30px) rotate(360deg);}}
+.header{text-align:center;margin-bottom:28px;}
+.header h1{margin:0;font-size:26px;font-weight:800;background:linear-gradient(135deg,#6366F1,#EC4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Space Grotesk',sans-serif;letter-spacing:-1px;}
+.tabs{display:flex;gap:8px;margin-bottom:24px;justify-content:center;flex-wrap:wrap;}
+.tab{padding:10px 20px;border-radius:14px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;}
+.tab.active{color:#fff;transform:scale(1.05);}
+.tab:not(.active){background:#fff;color:#6B7280;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+.content{max-width:600px;margin:0 auto;}
+.section-header{padding:28px 32px;border-radius:20px 20px 0 0;position:relative;overflow:hidden;}
+.section-header .bg-icon{position:absolute;top:-30px;right:-20px;font-size:100px;opacity:0.1;transform:rotate(12deg);}
+.section-header .label{font-size:14px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.section-header h2{margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.section-header p{margin:6px 0 0;font-size:14px;color:rgba(255,255,255,0.8);}
+.section-body{padding:20px;background:#fff;border-radius:0 0 20px 20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);}
+.activity{background:#fff;border-radius:16px;border:1px solid #E5E7EB;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:box-shadow 0.3s;}
+.activity:hover{box-shadow:0 8px 25px rgba(0,0,0,0.08);}
+.activity-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.2s;}
+.activity-header h4{margin:0;font-size:16px;font-weight:700;color:#1F2937;}
+.activity-header p{margin:4px 0 0;font-size:13px;color:#6B7280;}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.5px;}
+.arrow{transition:transform 0.3s;font-size:18px;color:#9CA3AF;}
+.arrow.open{transform:rotate(180deg);}
+.activity-content{padding:20px;border-top:1px solid #F3F4F6;animation:fadeSlideUp 0.3s ease;}
+.hidden{display:none;}
+.btn-primary{display:block;margin:14px auto 0;padding:10px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.btn-secondary{padding:6px 16px;border-radius:8px;border:none;background:#6366F1;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+input[type="text"],textarea{width:100%;padding:10px 14px;border-radius:10px;border:2px solid #E5E7EB;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;transition:all 0.3s;}
+textarea{resize:vertical;min-height:70px;line-height:1.5;}
+input:focus,textarea:focus{border-color:#C7D2FE;}
+.footer-note{margin-top:28px;padding:20px 24px;border-radius:16px;background:#F9FAFB;border:1px dashed #D1D5DB;text-align:center;font-size:13px;color:#6B7280;}
+
+/* Specific components */
+.pregunta-card{padding:16px 20px;border-radius:14px;cursor:pointer;transition:all 0.4s ease;}
+.pregunta-card.closed{background:#F9FAFB;border:2px dashed #D1D5DB;}
+.pregunta-card.opened{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:2px solid #F59E0B;}
+.situacion-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.situacion-card{padding:14px 16px;border-radius:12px;border:2px solid #E5E7EB;background:#fff;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;gap:10px;}
+.situacion-card.selected{border-color:#8B5CF6;background:#EDE9FE;transform:scale(1.03);}
+.order-item{padding:12px 16px;border-radius:12px;border:2px solid #E5E7EB;background:#fff;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:12px;}
+.order-item.placed{border-color:#6366F1;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);}
+.order-num{width:30px;height:30px;border-radius:50%;background:#6366F1;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;}
+.classify-btn{width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.classify-btn.selected{transform:scale(1.15);}
+.vf-btn{flex:1;padding:8px;border-radius:10px;border:2px solid #E5E7EB;background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:#6B7280;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.vf-btn.selected{border-color:#6366F1;background:#EEF2FF;font-weight:700;color:#4338CA;}
+.rel-item{padding:12px 14px;border-radius:12px;border:2px solid #E5E7EB;background:#fff;cursor:pointer;transition:all 0.25s;font-size:14px;font-weight:500;color:#374151;}
+.rel-item.sel{border-color:#8B5CF6;background:#EDE9FE;transform:scale(1.03);}
+.rel-item.matched{border-color:#10B981;background:#ECFDF5;}
+.rel-item.matchedR{border-color:#10B981;background:#ECFDF5;opacity:0.6;}
+.rel-item.highlight{background:#FEF3C7;}
+.intrusa-card{padding:16px;border-radius:14px;border:2px solid #E5E7EB;background:#fff;cursor:pointer;transition:all 0.3s;text-align:center;font-size:16px;font-weight:700;color:#374151;}
+.intrusa-card.correct{border:3px solid #10B981;background:#ECFDF5;color:#065F46;}
+.intrusa-card.wrong{border:3px solid #EF4444;background:#FEF2F2;color:#991B1B;}
+.intrusa-card.picked{transform:scale(1.05);}
+.proceso-zone{min-height:60px;padding:12px;border-radius:14px;border:2px dashed #C7D2FE;background:#F5F3FF;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;}
+.proceso-placed{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:#fff;border:1px solid #E0E7FF;animation:fadeSlideUp 0.3s ease;}
+.proceso-chip{padding:10px 16px;border-radius:12px;border:2px solid #E5E7EB;background:#fff;cursor:pointer;transition:all 0.25s;font-size:13px;font-weight:500;color:#374151;display:inline-flex;align-items:center;gap:6px;}
+.proceso-chip:hover{border-color:#8B5CF6;background:#EDE9FE;}
+.comp-input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid #D1D5DB;font-size:13px;outline:none;box-sizing:border-box;transition:all 0.3s;}
+.comp-input.ok{border:2px solid #10B981;background:#ECFDF5;}
+.comp-input.bad{border:2px solid #EF4444;background:#FEF2F2;}
+.flip-card{padding:18px 20px;border-radius:16px;cursor:pointer;transition:all 0.5s ease;position:relative;overflow:hidden;}
+.timeline-dot{position:absolute;left:-9px;top:2px;width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #6366F1;transition:all 0.3s;}
+.result-box{margin-top:14px;padding:12px 16px;border-radius:12px;text-align:center;animation:fadeSlideUp 0.4s ease;}
+.progress-bar{height:6px;border-radius:6px;background:#E5E7EB;overflow:hidden;}
+.progress-fill{height:100%;border-radius:6px;transition:width 0.5s ease;}
+.feedback{margin-top:12px;padding:12px 16px;border-radius:12px;animation:fadeSlideUp 0.3s ease;}
+.kw-bar{display:flex;gap:4px;margin-top:8px;}
+.kw-segment{flex:1;height:4px;border-radius:4px;transition:all 0.5s;}
+.causa-grid{display:grid;grid-template-columns:1fr 20px 1fr;gap:8px;align-items:start;}
+.causa-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:0 4px;}
+.causa-item{padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;cursor:pointer;transition:all 0.25s;font-size:13px;font-weight:500;color:#1F2937;}
+.encuesta-opt{padding:12px 16px;border-radius:12px;border:1px solid #E5E7EB;background:#fff;cursor:pointer;position:relative;overflow:hidden;transition:all 0.3s;}
+.encuesta-bar{position:absolute;left:0;top:0;bottom:0;border-radius:12px;transition:width 0.8s ease;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:8px">
+    <span style="font-size:32px">📓</span>
+    <h1>Campus Cuaderno Vivo</h1>
+  </div>
+  <p style="font-size:14px;color:#6B7280;font-weight:500">Catálogo de Actividades — Parte 1</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" id="tab0" onclick="switchTab(0)" style="background:linear-gradient(135deg,#F59E0B,#D97706);box-shadow:0 4px 15px rgba(245,158,11,0.4)">🚪 UMBRAL</button>
+  <button class="tab" id="tab1" onclick="switchTab(1)">⚛️ NÚCLEO <span style="font-size:10px;background:rgba(99,102,241,0.15);padding:2px 6px;border-radius:6px;font-weight:800;color:#6366F1">×10</span></button>
+  <button class="tab" id="tab2" onclick="switchTab(2)">✨ SABÍAS</button>
+</div>
+
+<div class="content" id="mainContent"></div>
+<div class="footer-note">💡 <strong>Cada actividad es reutilizable:</strong> solo cambiás el contenido y el tipo se adapta a cualquier unidad.</div>
+
+<script>
+// ============ STATE ============
+let currentTab = 0;
+const tabColors = [
+  {gradient:"linear-gradient(135deg,#F59E0B,#D97706)",shadow:"0 4px 15px rgba(245,158,11,0.4)",color:"#F59E0B"},
+  {gradient:"linear-gradient(135deg,#6366F1,#4F46E5)",shadow:"0 4px 15px rgba(99,102,241,0.4)",color:"#6366F1"},
+  {gradient:"linear-gradient(135deg,#EC4899,#DB2777)",shadow:"0 4px 15px rgba(236,72,153,0.4)",color:"#EC4899"}
+];
+const state = {};
+
+function switchTab(idx) {
+  currentTab = idx;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    if(i===idx){t.classList.add('active');t.style.background=tabColors[i].gradient;t.style.boxShadow=tabColors[i].shadow;t.style.color='#fff';}
+    else{t.classList.remove('active');t.style.background='#fff';t.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';t.style.color='#6B7280';}
+  });
+  render();
+}
+
+function render() {
+  const c = document.getElementById('mainContent');
+  if(currentTab===0) c.innerHTML = renderUmbral();
+  else if(currentTab===1) c.innerHTML = renderNucleo();
+  else c.innerHTML = renderSabias();
+}
+
+function toggleActivity(id) {
+  state['open_'+id] = !state['open_'+id];
+  render();
+}
+
+// ============ SECTION HEADER ============
+function sectionHeader(icon, title, subtitle, gradient) {
+  return `<div class="section-header" style="background:${gradient}">
+    <div class="bg-icon">${icon}</div>
+    <div class="label">Sección</div>
+    <h2>${icon} ${title}</h2>
+    <p>${subtitle}</p>
+  </div>`;
+}
+
+function activityWrap(id, title, desc, level, color, content, defaultOpen) {
+  const isOpen = state['open_'+id] !== undefined ? state['open_'+id] : (defaultOpen||false);
+  return `<div class="activity">
+    <div class="activity-header" onclick="toggleActivity('${id}')" style="border-left:4px solid ${color};${isOpen?'background:'+color+'08':''}">
+      <div><h4>${title}</h4><p>${desc}</p></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="badge" style="background:${color}18;color:${color}">🧠 ${level}</span>
+        <span class="arrow ${isOpen?'open':''}">▼</span>
+      </div>
+    </div>
+    ${isOpen?'<div class="activity-content">'+content+'</div>':''}
+  </div>`;
+}
+
+// ============ UMBRAL ============
+function renderUmbral() {
+  return sectionHeader('🚪','UMBRAL','Conexión con la realidad — Activar conocimientos previos','linear-gradient(135deg,#F59E0B,#D97706)')
+    + '<div class="section-body">'
+    + activityWrap('u1','🔥 Preguntas Disparadoras','El alumno toca para revelar pistas que lo conectan con su realidad','Activar','#F59E0B', renderPreguntasDisparadoras(), true)
+    + activityWrap('u2','🔗 Conectá con tu Vida','Elige una situación que vivió y escribe brevemente','Conectar','#8B5CF6', renderConectaVida())
+    + activityWrap('u3','🌡️ Termómetro de Saberes','Slider visual: ¿cuánto sabe antes de empezar?','Diagnosticar','#EF4444', renderTermometro())
+    + '</div>';
+}
+
+function renderPreguntasDisparadoras() {
+  const preguntas = [
+    {emoji:'💰',text:'¿Por qué algunas cosas cuestan más en un país que en otro?',pista:'Pensá en cuando ves precios de tecnología en Argentina vs. EEUU...'},
+    {emoji:'🏭',text:'¿Quién decide qué se produce y qué no?',pista:'¿Alguna vez dejaron de fabricar algo que te gustaba?'},
+    {emoji:'🌍',text:'¿La economía existía antes del dinero?',pista:'¿Cómo hacían para conseguir lo que necesitaban?'}
+  ];
+  return preguntas.map((p,i) => {
+    const rev = state['preg_'+i];
+    return `<div class="pregunta-card ${rev?'opened':'closed'}" onclick="state['preg_${i}']=!state['preg_${i}'];render();" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">${p.emoji}</span>
+        <div>
+          <p style="font-size:15px;font-weight:600;color:#1F2937">${p.text}</p>
+          ${rev?`<p style="margin-top:8px;font-size:13px;color:#92400E;font-style:italic;animation:fadeSlideUp 0.4s ease">💡 ${p.pista}</p>`:''}
+        </div>
+      </div>
+      ${!rev?'<p style="margin:8px 0 0 40px;font-size:12px;color:#9CA3AF">Tocá para descubrir la pista</p>':''}
+    </div>`;
+  }).join('');
+}
+
+function renderConectaVida() {
+  const sits = [{emoji:'🛒',label:'Fui al súper y comparé precios'},{emoji:'📱',label:'Ahorré para comprarme algo'},{emoji:'💸',label:'Me pregunté por qué todo aumenta'},{emoji:'🤝',label:'Intercambié algo con alguien'}];
+  const sel = state.conecta_sel;
+  let html = '<p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#374151">¿Cuál de estas situaciones viviste?</p><div class="situacion-grid">';
+  sits.forEach((s,i) => {
+    html += `<div class="situacion-card ${sel===i?'selected':''}" onclick="state.conecta_sel=${i};render();">
+      <span style="font-size:24px">${s.emoji}</span><span style="font-size:13px;font-weight:500;color:#374151">${s.label}</span>
+    </div>`;
+  });
+  html += '</div>';
+  if(sel !== undefined) {
+    html += `<div style="animation:fadeSlideUp 0.4s ease"><p style="font-size:13px;color:#6B7280;margin-bottom:8px">Contanos brevemente qué pasó:</p>
+    <textarea placeholder="Escribí tu experiencia acá..." style="border-color:#DDD6FE" oninput="state.conecta_txt=this.value">${state.conecta_txt||''}</textarea></div>`;
+  }
+  return html;
+}
+
+function renderTermometro() {
+  const val = state.termo_val || 50;
+  const labels = [{max:20,text:'Nada 🥶',color:'#3B82F6'},{max:40,text:'Poco 🤔',color:'#06B6D4'},{max:60,text:'Algo 😊',color:'#10B981'},{max:80,text:'Bastante 😃',color:'#F59E0B'},{max:101,text:'¡Mucho! 🔥',color:'#EF4444'}];
+  const lbl = labels.find(l => val < l.max);
+  return `<div style="text-align:center;padding:10px">
+    <p style="font-size:14px;font-weight:600;color:#374151;margin-bottom:16px">¿Cuánto sabés sobre este tema antes de empezar?</p>
+    <div style="position:relative;padding:0 10px">
+      <div style="height:10px;border-radius:10px;background:linear-gradient(90deg,#3B82F6,#06B6D4,#10B981,#F59E0B,#EF4444);margin-bottom:10px"></div>
+      <input type="range" min="0" max="100" value="${val}" oninput="state.termo_val=Number(this.value);render();" style="width:100%;margin-top:-18px;position:relative;z-index:2;accent-color:${lbl.color}">
+    </div>
+    <div style="margin-top:12px;padding:10px 20px;border-radius:12px;background:${lbl.color}15;display:inline-block">
+      <span style="font-size:18px;font-weight:700;color:${lbl.color}">${lbl.text}</span>
+    </div>
+  </div>`;
+}
+
+// ============ NÚCLEO (10 actividades) ============
+function renderNucleo() {
+  return sectionHeader('⚛️','NÚCLEO','Alma de la app — 10 actividades de lo simple a lo complejo','linear-gradient(135deg,#6366F1,#4F46E5)')
+    + '<div class="section-body">'
+    + activityWrap('n1','📋 1. Ordenar Cronológicamente','Tocá los conceptos en el orden correcto','Organizar','#6366F1', renderN1Ordenar(), true)
+    + activityWrap('n2','🗂️ 2. Clasificador de Conceptos','Asigná cada concepto a su categoría','Clasificar','#3B82F6', renderN2Clasificar())
+    + activityWrap('n3','✏️ 3. Completar el Mapa','Rellená los espacios en blanco del resumen','Definir','#10B981', renderN3Completar())
+    + activityWrap('n4','✅ 4. Verdadero o Falso','Evaluá cada afirmación con feedback inmediato','Analizar','#EF4444', renderN4VoF())
+    + activityWrap('n5','🔗 5. Relacionar Columnas','Conectá cada concepto con su par correcto','Relacionar','#8B5CF6', renderN5Relacionar())
+    + activityWrap('n6','🚫 6. Palabra Intrusa','Encontrá el concepto que no pertenece al grupo','Diferenciar','#F97316', renderN6Intrusa())
+    + activityWrap('n7','💬 7. Definí con tus Palabras','Escribí definiciones propias con detección de palabras clave','Explicar','#0EA5E9', renderN7Definir())
+    + activityWrap('n8','⚡ 8. Causa → Efecto','Conectá causas con sus consecuencias económicas','Aplicar','#EC4899', renderN8Causa())
+    + activityWrap('n9','🔢 9. Ordenar el Proceso','Ordená los pasos de un proceso lógico','Estructurar','#14B8A6', renderN9Proceso())
+    + activityWrap('n10','⚖️ 10. Comparador','Tabla comparativa de similitudes y diferencias','Comparar','#7C3AED', renderN10Comparador())
+    + '</div>';
+}
+
+// N1: Ordenar
+function renderN1Ordenar() {
+  if(!state.n1) state.n1 = {items:[{id:1,text:'Revolución Industrial',emoji:'🏭',order:null},{id:2,text:'Trueque',emoji:'🤝',order:null},{id:3,text:'Creación de la moneda',emoji:'🪙',order:null},{id:4,text:'Comercio internacional',emoji:'🚢',order:null},{id:5,text:'Mercantilismo',emoji:'👑',order:null}],next:1,done:false};
+  const s=state.n1, correct=[2,3,5,1,4];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">Tocá los conceptos en orden cronológico:</p><div style="display:flex;flex-direction:column;gap:8px">';
+  s.items.forEach(it => {
+    html += `<div class="order-item ${it.order?'placed':''}" onclick="n1Click(${it.id})" style="opacity:${it.order?1:0.85};cursor:${it.order?'default':'pointer'}">
+      ${it.order?`<span class="order-num">${it.order}</span>`:`<span style="font-size:24px;flex-shrink:0">${it.emoji}</span>`}
+      <span style="font-size:14px;font-weight:500;color:#1F2937">${it.text}</span>
+    </div>`;
+  });
+  html += '</div>';
+  if(s.done) {
+    const isOk = s.items.every((it,idx) => it.order === correct[idx]);
+    html += `<div class="result-box" style="background:${isOk?'#D1FAE5':'#FEF3C7'}">
+      <span style="font-size:14px;font-weight:600;color:${isOk?'#065F46':'#92400E'}">${isOk?'🎉 ¡Perfecto! Orden correcto':'🔄 Revisá el orden...'}</span>
+      <button class="btn-secondary" onclick="state.n1=null;render();" style="display:block;margin:8px auto 0">Reintentar</button>
+    </div>`;
+  }
+  return html;
+}
+function n1Click(id) {
+  const s=state.n1; if(s.done) return;
+  const it=s.items.find(i=>i.id===id); if(it.order) return;
+  it.order=s.next; s.next++;
+  if(s.next > s.items.length) s.done=true;
+  render();
+}
+
+// N2: Clasificar
+function renderN2Clasificar() {
+  if(!state.n2) state.n2 = {cs:[{id:1,text:'Oferta y demanda',cat:null,ok:0},{id:2,text:'Inflación',cat:null,ok:1},{id:3,text:'Precio de un bien',cat:null,ok:0},{id:4,text:'PBI',cat:null,ok:1},{id:5,text:'Costos de producción',cat:null,ok:0},{id:6,text:'Desempleo',cat:null,ok:1}],show:false};
+  const s=state.n2, cats=[{name:'Microeconomía',color:'#3B82F6',emoji:'🔍'},{name:'Macroeconomía',color:'#10B981',emoji:'🌐'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">Clasificá cada concepto en su categoría:</p>';
+  html += '<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">';
+  cats.forEach(c => html += `<div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:50%;background:${c.color};display:inline-block"></span><span style="font-size:13px;font-weight:600;color:${c.color}">${c.emoji} ${c.name}</span></div>`);
+  html += '</div><div style="display:flex;flex-direction:column;gap:8px">';
+  s.cs.forEach(c => {
+    const brd = s.show ? (c.cat===c.ok?'2px solid #10B981':'2px solid #EF4444') : '1px solid #E5E7EB';
+    html += `<div style="padding:10px 14px;border-radius:12px;border:${brd};display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all 0.3s">
+      <span style="font-size:14px;font-weight:500;color:#1F2937">${c.text}</span>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        ${cats.map((cat,i) => `<button class="classify-btn ${c.cat===i?'selected':''}" onclick="state.n2.cs.find(x=>x.id===${c.id}).cat=${i};state.n2.show=false;render();" style="border:${c.cat===i?'3px solid '+cat.color:'2px solid #D1D5DB'};background:${c.cat===i?cat.color+'20':'#F9FAFB'}">${cat.emoji}</button>`).join('')}
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  if(s.cs.every(c=>c.cat!==null)) {
+    html += `<button class="btn-primary" onclick="state.n2.show=true;render();">Verificar ✓</button>`;
+  }
+  if(s.show) {
+    const allOk=s.cs.every(c=>c.cat===c.ok);
+    html += `<p style="text-align:center;margin-top:10px;font-size:14px;font-weight:600;color:${allOk?'#065F46':'#92400E'};animation:fadeSlideUp 0.3s ease">${allOk?'🎉 ¡Excelente clasificación!':'Revisá: '+s.cs.filter(c=>c.cat!==c.ok).length+' concepto(s) para corregir'}</p>`;
+  }
+  return html;
+}
+
+// N3: Completar
+function renderN3Completar() {
+  if(!state.n3) state.n3={ans:{},chk:false};
+  const s=state.n3;
+  const blanks=[{id:'a',label:'La economía estudia cómo se administran los',correct:'recursos escasos',hint:'recursos ___'},{id:'b',label:'Los agentes económicos son: familias, empresas y',correct:'Estado',hint:'E____'},{id:'c',label:'Los bienes pueden ser libres o',correct:'económicos',hint:'eco_____'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">Completá los espacios en blanco:</p><div style="display:flex;flex-direction:column;gap:14px">';
+  blanks.forEach(b => {
+    const val=s.ans[b.id]||'';
+    const ok=s.chk && val.toLowerCase().trim()===b.correct.toLowerCase();
+    const bad=s.chk && !ok;
+    html += `<div><p style="font-size:14px;color:#374151;margin:0 0 6px">${b.label} <span style="color:#9CA3AF;font-size:12px">(${b.hint})</span></p>
+    <input type="text" value="${val}" oninput="state.n3.ans['${b.id}']=this.value;state.n3.chk=false;render();" placeholder="Tu respuesta..." style="border:${ok?'2px solid #10B981':bad?'2px solid #EF4444':'2px solid #E5E7EB'};background:${ok?'#D1FAE5':bad?'#FEE2E2':'#fff'}">
+    ${bad?'<p style="font-size:12px;color:#EF4444;margin:4px 0 0">💡 Pista: '+b.hint+'</p>':''}</div>`;
+  });
+  html += '</div><button class="btn-primary" onclick="state.n3.chk=true;render();">Comprobar ✓</button>';
+  return html;
+}
+
+// N4: V o F
+function renderN4VoF() {
+  const stmts=[{text:'Adam Smith es considerado el padre de la economía moderna',correct:true,explain:"Su obra 'La riqueza de las naciones' (1776) sentó las bases."},{text:'El mercantilismo promovía el libre comercio entre naciones',correct:false,explain:'El mercantilismo buscaba acumular metales preciosos y restringir importaciones.'},{text:'La fisiocracia consideraba que la tierra era la fuente de riqueza',correct:true,explain:'Los fisiócratas creían que solo la agricultura generaba riqueza real.'}];
+  if(!state.n4) state.n4={ans:{},rev:{}};
+  const s=state.n4;
+  let html='<div style="display:flex;flex-direction:column;gap:12px">';
+  stmts.forEach((st,i) => {
+    const answered=s.ans[i]!==undefined, correct=s.ans[i]===st.correct;
+    html += `<div style="padding:14px 16px;border-radius:14px;border:${answered?(correct?'2px solid #10B981':'2px solid #EF4444'):'1px solid #E5E7EB'};background:${answered?(correct?'#ECFDF5':'#FEF2F2'):'#FAFAFA'};transition:all 0.3s">
+      <p style="margin:0;font-size:14px;font-weight:500;color:#1F2937">${st.text}</p>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="vf-btn ${s.ans[i]===true?'selected':''}" onclick="state.n4.ans[${i}]=true;state.n4.rev[${i}]=true;render();">✅ Verdadero</button>
+        <button class="vf-btn ${s.ans[i]===false?'selected':''}" onclick="state.n4.ans[${i}]=false;state.n4.rev[${i}]=true;render();">❌ Falso</button>
+      </div>
+      ${s.rev[i]?`<p style="margin:10px 0 0;font-size:13px;color:${correct?'#065F46':'#991B1B'};font-style:italic;animation:fadeSlideUp 0.3s ease">${correct?'✨ ':'📖 '}${st.explain}</p>`:''}
+    </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+// N5: Relacionar
+function renderN5Relacionar() {
+  const pairs=[{left:'Adam Smith',right:'Mano invisible',emoji:'🤚'},{left:'Karl Marx',right:'Lucha de clases',emoji:'⚔️'},{left:'Keynes',right:'Intervención estatal',emoji:'🏛️'},{left:'Quesnay',right:'Fisiocracia',emoji:'🌾'}];
+  if(!state.n5) { const sh=[...pairs].sort(()=>Math.random()-0.5); state.n5={sel:null,matches:{},shuffR:sh}; }
+  const s=state.n5, mr=Object.values(s.matches);
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">Conectá cada economista con su concepto clave:</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="display:flex;flex-direction:column;gap:8px">';
+  pairs.forEach((p,i) => {
+    const isSel=s.sel===i, isM=s.matches[i]!==undefined;
+    html += `<div class="rel-item ${isSel?'sel':''} ${isM?'matched':''}" onclick="if(!state.n5.matches[${i}])state.n5.sel=${isSel?'null':i};render();">${isM?'✅ ':''}${p.left}</div>`;
+  });
+  html += '</div><div style="display:flex;flex-direction:column;gap:8px">';
+  s.shuffR.forEach((p,i) => {
+    const isM=mr.includes(p.right);
+    html += `<div class="rel-item ${isM?'matchedR':''} ${s.sel!==null&&!isM?'highlight':''}" onclick="n5RightClick('${p.right}')" style="font-weight:500">${p.emoji} ${p.right}</div>`;
+  });
+  html += '</div></div>';
+  if(Object.keys(s.matches).length===pairs.length) html += '<p style="text-align:center;margin-top:12px;font-size:15px;font-weight:700;color:#065F46;animation:fadeSlideUp 0.4s ease">🎉 ¡Todas las conexiones correctas!</p>';
+  return html;
+}
+function n5RightClick(rightText) {
+  const s=state.n5, pairs=[{left:'Adam Smith',right:'Mano invisible'},{left:'Karl Marx',right:'Lucha de clases'},{left:'Keynes',right:'Intervención estatal'},{left:'Quesnay',right:'Fisiocracia'}];
+  if(s.sel===null) return;
+  if(pairs[s.sel].right===rightText) s.matches[s.sel]=rightText;
+  s.sel=null; render();
+}
+
+// N6: Palabra Intrusa
+function renderN6Intrusa() {
+  const groups=[{q:'¿Cuál NO pertenece al grupo?',words:[{text:'Oferta',bad:false},{text:'Demanda',bad:false},{text:'Fotosíntesis',bad:true},{text:'Precio',bad:false}],explain:'Fotosíntesis es un concepto de biología, no de economía.',emoji:'🔍'},{q:'¿Cuál NO es una escuela económica?',words:[{text:'Fisiocracia',bad:false},{text:'Mercantilismo',bad:false},{text:'Clasicismo',bad:false},{text:'Impresionismo',bad:true}],explain:'El Impresionismo es un movimiento artístico.',emoji:'🎭'}];
+  if(!state.n6) state.n6={ci:0,sel:null};
+  const s=state.n6, g=groups[s.ci];
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><p style="font-size:14px;font-weight:600;color:#374151;margin:0">${g.emoji} ${g.q}</p><span style="font-size:12px;color:#9CA3AF">${s.ci+1}/${groups.length}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">`;
+  g.words.forEach((w,i) => {
+    const isSel=s.sel===i, showOk=s.sel!==null&&w.bad, isWrong=isSel&&!w.bad;
+    html += `<div class="intrusa-card ${showOk?'correct':''} ${isWrong?'wrong':''} ${isSel?'picked':''}" onclick="if(state.n6.sel!==null)return;state.n6.sel=${i};render();">${showOk?'🚫 ':''}${w.text}</div>`;
+  });
+  html += '</div>';
+  if(s.sel!==null) {
+    const ok=g.words[s.sel].bad;
+    html += `<div style="margin-top:14px;animation:fadeSlideUp 0.3s ease"><div style="padding:12px 16px;border-radius:12px;background:${ok?'#D1FAE5':'#FEF3C7'}"><p style="margin:0;font-size:13px;color:${ok?'#065F46':'#92400E'}">${ok?'🎉 ¡Correcto! ':'🤔 No es esa... '}${g.explain}</p></div>
+    <button class="btn-secondary" onclick="state.n6.ci=(state.n6.ci+1)%${groups.length};state.n6.sel=null;render();" style="display:block;margin:10px auto 0">Siguiente grupo →</button></div>`;
+  }
+  return html;
+}
+
+// N7: Definí con tus palabras
+function renderN7Definir() {
+  const conceptos=[{termino:'Escasez',pista:'¿Qué pasa cuando los recursos no alcanzan para todos?',kw:['limitado','recursos','necesidades','insuficiente','alcanza','falta']},{termino:'Mercado',pista:'¿Dónde se encuentran los que quieren comprar y los que quieren vender?',kw:['compra','venta','intercambio','oferta','demanda','compradores','vendedores']},{termino:'Inflación',pista:'¿Qué pasa cuando todo cuesta más que antes?',kw:['precios','suben','aumentan','dinero','poder','compra','suba']}];
+  if(!state.n7) state.n7={cur:0,inp:'',sub:false,hint:false};
+  const s=state.n7, c=conceptos[s.cur];
+  const matched=c.kw.filter(k=>s.inp.toLowerCase().includes(k)), q=matched.length;
+  const fb=q>=3?{text:'🌟 ¡Excelente definición!',color:'#065F46',bg:'#D1FAE5'}:q>=2?{text:'👍 ¡Buena! Podés agregar más detalle.',color:'#92400E',bg:'#FEF3C7'}:q>=1?{text:'💪 Vas bien, intentá ser más específico/a.',color:'#1E40AF',bg:'#DBEAFE'}:{text:'🤔 Intentá de nuevo, usá la pista como guía.',color:'#991B1B',bg:'#FEE2E2'};
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:#9CA3AF">Concepto ${s.cur+1} de ${conceptos.length}</span><div style="display:flex;gap:4px">${conceptos.map((_,i)=>`<div style="width:8px;height:8px;border-radius:50%;background:${i===s.cur?'#6366F1':'#E5E7EB'}"></div>`).join('')}</div></div>`;
+  html += `<div style="padding:18px 20px;border-radius:16px;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);margin-bottom:14px;text-align:center"><p style="margin:0;font-size:22px;font-weight:800;color:#4338CA">${c.termino}</p></div>`;
+  html += `<button onclick="state.n7.hint=!state.n7.hint;render();" style="padding:6px 14px;border-radius:8px;border:1px solid #D1D5DB;background:${s.hint?'#FEF3C7':'#fff'};cursor:pointer;font-size:12px;color:#6B7280;margin-bottom:12px;font-family:'DM Sans',sans-serif">💡 ${s.hint?'Ocultar pista':'Ver pista'}</button>`;
+  if(s.hint) html += `<p style="font-size:13px;color:#92400E;font-style:italic;margin-bottom:12px;animation:fadeSlideUp 0.3s ease">${c.pista}</p>`;
+  html += `<textarea oninput="state.n7.inp=this.value;state.n7.sub=false;render();" placeholder='Definí "${c.termino}" con tus palabras...' style="border-color:#C7D2FE;min-height:80px">${s.inp}</textarea>`;
+  if(s.inp.length>10) html += `<div class="kw-bar">${[1,2,3].map(l=>`<div class="kw-segment" style="background:${q>=l?(q>=3?'#10B981':q>=2?'#F59E0B':'#3B82F6'):'#E5E7EB'}"></div>`).join('')}</div>`;
+  html += `<button class="btn-primary" onclick="state.n7.sub=true;render();" ${s.inp.length<5?'disabled style="background:#D1D5DB;cursor:not-allowed;display:block;margin:12px auto 0;padding:10px 28px;border-radius:12px;border:none;color:#fff;font-size:14px;font-weight:700"':''}>Enviar definición</button>`;
+  if(s.sub) {
+    html += `<div class="feedback" style="background:${fb.bg}"><p style="margin:0;font-size:14px;font-weight:600;color:${fb.color}">${fb.text}</p>${q<3?`<p style="margin:6px 0 0;font-size:12px;color:#6B7280">Palabras clave detectadas: ${matched.length>0?matched.join(', '):'ninguna aún'}</p>`:''}</div>`;
+    if(s.cur<conceptos.length-1) html += `<button class="btn-secondary" onclick="state.n7.cur++;state.n7.inp='';state.n7.sub=false;state.n7.hint=false;render();" style="display:block;margin:10px auto 0;background:#10B981">Siguiente concepto →</button>`;
+  }
+  return html;
+}
+
+// N8: Causa → Efecto
+function renderN8Causa() {
+  const causas=[{id:1,text:'Aumento de la emisión monetaria',emoji:'🖨️'},{id:2,text:'Caída de la demanda',emoji:'📉'},{id:3,text:'Inversión en educación',emoji:'🎓'},{id:4,text:'Suba del precio del petróleo',emoji:'🛢️'}];
+  const efectos=[{id:1,text:'Inflación',pid:1,emoji:'💸'},{id:2,text:'Baja del precio del bien',pid:2,emoji:'🏷️'},{id:3,text:'Mayor productividad laboral',pid:3,emoji:'📈'},{id:4,text:'Aumento del costo de transporte',pid:4,emoji:'🚛'}];
+  if(!state.n8) { const sh=[...efectos].sort(()=>Math.random()-0.5); state.n8={selC:null,conn:{},shuffE:sh}; }
+  const s=state.n8, connE=Object.values(s.conn);
+  let html=`<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">Conectá cada causa con su efecto:</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Tocá una causa (izq) y luego su efecto (der)</p>`;
+  html += '<div class="causa-grid"><div style="display:flex;flex-direction:column;gap:8px"><span class="causa-label" style="color:#6366F1">Causa</span>';
+  causas.forEach(c => {
+    const isSel=s.selC===c.id, isConn=s.conn[c.id];
+    html += `<div class="causa-item" onclick="if(!state.n8.conn[${c.id}])state.n8.selC=${c.id};render();" style="border:${isSel?'2px solid #8B5CF6':isConn?'2px solid #10B981':'2px solid #E5E7EB'};background:${isSel?'#EDE9FE':isConn?'#ECFDF5':'#fff'}">${c.emoji} ${c.text}</div>`;
+  });
+  html += '</div><div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding-top:26px;gap:36px">';
+  causas.forEach(c => html += `<span style="font-size:14px;color:${s.conn[c.id]?'#10B981':'#D1D5DB'}">→</span>`);
+  html += '</div><div style="display:flex;flex-direction:column;gap:8px"><span class="causa-label" style="color:#EC4899">Efecto</span>';
+  s.shuffE.forEach(e => {
+    const isC=connE.includes(e.id);
+    html += `<div class="causa-item" onclick="n8EfectoClick(${e.id},${e.pid})" style="border:${isC?'2px solid #10B981':'2px solid #E5E7EB'};background:${isC?'#ECFDF5':s.selC!==null?'#FEF3C7':'#F9FAFB'};opacity:${isC?0.6:1}">${e.emoji} ${e.text}</div>`;
+  });
+  html += '</div></div>';
+  if(Object.keys(s.conn).length===causas.length) html += '<p style="text-align:center;margin-top:14px;font-size:15px;font-weight:700;color:#065F46;animation:fadeSlideUp 0.4s ease">🎉 ¡Todas las conexiones causa-efecto correctas!</p>';
+  return html;
+}
+function n8EfectoClick(eid, pid) {
+  const s=state.n8; if(s.selC===null) return;
+  if(pid===s.selC) s.conn[s.selC]=eid;
+  s.selC=null; render();
+}
+
+// N9: Ordenar Proceso
+function renderN9Proceso() {
+  const correct=[{id:1,text:'Identificar el problema económico',emoji:'🔍'},{id:2,text:'Recopilar datos relevantes',emoji:'📊'},{id:3,text:'Formular una hipótesis',emoji:'💡'},{id:4,text:'Contrastar con la realidad',emoji:'🔬'},{id:5,text:'Elaborar conclusiones',emoji:'📝'}];
+  if(!state.n9) { const sh=[...correct].sort(()=>Math.random()-0.5); state.n9={shuf:sh,placed:[]}; }
+  const s=state.n9, avail=s.shuf.filter(x=>!s.placed.find(p=>p.id===x.id));
+  const done=s.placed.length===correct.length, isOk=done&&s.placed.every((x,i)=>x.id===correct[i].id);
+  let html=`<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">Ordená los pasos del método científico en economía:</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Tocá cada paso en el orden correcto</p>`;
+  html += '<div class="proceso-zone">';
+  if(!s.placed.length) html += '<p style="margin:0;font-size:13px;color:#A78BFA;text-align:center;padding:10px">Los pasos aparecerán acá en orden ↓</p>';
+  s.placed.forEach((x,i) => html += `<div class="proceso-placed"><span class="order-num" style="width:26px;height:26px;font-size:12px">${i+1}</span><span style="font-size:13px;font-weight:500;color:#374151">${x.emoji} ${x.text}</span></div>`);
+  html += '</div>';
+  if(s.placed.length>0&&!done) html += `<button onclick="state.n9.placed.pop();render();" style="display:block;margin:0 auto 12px;padding:6px 14px;border-radius:8px;border:1px solid #D1D5DB;background:#fff;cursor:pointer;font-size:12px;color:#6B7280;font-family:'DM Sans',sans-serif">↩ Quitar último</button>`;
+  if(!done) {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    avail.forEach(x => html += `<div class="proceso-chip" onclick="state.n9.placed.push({id:${x.id},text:'${x.text}',emoji:'${x.emoji}'});render();">${x.emoji} ${x.text}</div>`);
+    html += '</div>';
+  }
+  if(done) html += `<div class="result-box" style="background:${isOk?'#D1FAE5':'#FEF3C7'}"><p style="margin:0;font-size:14px;font-weight:600;color:${isOk?'#065F46':'#92400E'}">${isOk?'🎉 ¡Proceso perfecto!':'🔄 El orden no es correcto.'}</p>${!isOk?'<button class="btn-secondary" onclick="state.n9.placed=[];render();" style="margin-top:8px">Reintentar</button>':''}</div>`;
+  return html;
+}
+
+// N10: Comparador
+function renderN10Comparador() {
+  if(!state.n10) state.n10={ans:{s1:'',s2:'',d1:'',d2:'',d3:'',d4:''},sub:false};
+  const s=state.n10, filled=Object.values(s.ans).filter(v=>v.trim().length>3).length, total=6;
+  function inp(key,ph) {
+    const ok=s.sub&&s.ans[key].trim().length>3, bad=s.sub&&!ok;
+    return `<input type="text" class="comp-input ${ok?'ok':''} ${bad?'bad':''}" value="${s.ans[key]}" oninput="state.n10.ans['${key}']=this.value;state.n10.sub=false;" placeholder="${ph}">`;
+  }
+  let html=`<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">Compará estos dos conceptos completando la tabla:</p>`;
+  html += `<div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:1px;margin-bottom:1px">
+    <div style="padding:12px 8px;background:#F3F4F6;border-radius:12px 0 0 0;text-align:center"><span style="font-size:12px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:1px">Aspecto</span></div>
+    <div style="padding:12px 8px;background:#F59E0B15;text-align:center">👑 <span style="font-size:13px;font-weight:700;color:#F59E0B">Mercantilismo</span></div>
+    <div style="padding:12px 8px;background:#10B98115;border-radius:0 12px 0 0;text-align:center">🌾 <span style="font-size:13px;font-weight:700;color:#10B981">Fisiocracia</span></div>
+  </div>`;
+  html += `<div style="display:grid;grid-template-columns:90px 1fr;gap:1px;margin-bottom:1px">
+    <div style="padding:12px 8px;background:#DBEAFE;text-align:center"><span style="font-size:12px;font-weight:700;color:#1E40AF">🤝 Similar</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:10px">${inp('s1','¿En qué se parecen? (1)')}${inp('s2','¿En qué se parecen? (2)')}</div>
+  </div>`;
+  html += `<div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:1px">
+    <div style="padding:12px 8px;background:#FCE7F3;border-radius:0 0 0 12px;text-align:center"><span style="font-size:12px;font-weight:700;color:#BE185D">⚡ Diferente</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:10px">${inp('d1','Diferencia 1...')}${inp('d2','Diferencia 2...')}</div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:0 0 12px 0">${inp('d3','Diferencia 1...')}${inp('d4','Diferencia 2...')}</div>
+  </div>`;
+  html += `<div style="margin-top:14px;display:flex;align-items:center;gap:10px"><div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${(filled/total)*100}%;background:linear-gradient(90deg,#6366F1,#8B5CF6)"></div></div><span style="font-size:12px;color:#6B7280;font-weight:600">${filled}/${total}</span></div>`;
+  html += `<button class="btn-primary" onclick="state.n10.sub=true;render();" ${filled<2?'disabled style="background:#D1D5DB;cursor:not-allowed;display:block;margin:14px auto 0;padding:10px 28px;border-radius:12px;border:none;color:#fff;font-size:14px;font-weight:700"':''}>Enviar comparación</button>`;
+  if(s.sub) html += `<div class="feedback" style="background:${filled>=4?'#D1FAE5':'#FEF3C7'};text-align:center"><p style="margin:0;font-size:14px;font-weight:600;color:${filled>=4?'#065F46':'#92400E'}">${filled>=5?'🌟 ¡Comparación muy completa!':filled>=4?'🎉 ¡Muy bien!':'👍 Buen inicio, completá más campos.'}</p></div>`;
+  return html;
+}
+
+// ============ SABÍAS ============
+function renderSabias() {
+  return sectionHeader('✨','SABÍAS','Conexión emocional — Datos que te vuelan la cabeza','linear-gradient(135deg,#EC4899,#DB2777)')
+    + '<div class="section-body">'
+    + activityWrap('s1','🃏 Flip Cards de Curiosidades','Tocá para dar vuelta y descubrir datos increíbles','Descubrir','#EC4899', renderSabiasFlip(), true)
+    + activityWrap('s2','📅 Línea de Tiempo Interactiva','Explorá los hitos históricos de la economía','Explorar','#8B5CF6', renderSabiasTimeline())
+    + activityWrap('s3','🗳️ ¿Qué te sorprendió más?','Mini encuesta grupal con resultados en vivo','Reflexionar','#F59E0B', renderSabiasEncuesta())
+    + '</div>';
+}
+
+function renderSabiasFlip() {
+  const datos=[{front:'¿Sabías que...?',back:'La primera moneda de la historia se acuñó en Lidia (actual Turquía) alrededor del 600 a.C. ¡Estaban hechas de electro, una aleación natural de oro y plata!',emoji:'🪙',color:'#F59E0B'},{front:'Dato curioso',back:"Adam Smith, padre de la economía, nunca usó la expresión 'mano invisible' más de 3 veces en toda su obra. ¡Y es su concepto más famoso!",emoji:'🤚',color:'#8B5CF6'},{front:'¿Lo sabías?',back:'Hiperinflación en Zimbabue (2008): ¡un billete de 100 TRILLONES de dólares zimbabuenses no alcanzaba para comprar un pan!',emoji:'💸',color:'#EF4444'}];
+  return datos.map((d,i) => {
+    const fl=state['sflip_'+i];
+    if(!fl) return `<div class="flip-card" onclick="state['sflip_${i}']=true;render();" style="background:linear-gradient(135deg,${d.color},${d.color}CC);margin-bottom:14px;min-height:90px">
+      <div style="display:flex;align-items:center;gap:14px"><span style="font-size:36px">${d.emoji}</span><div><p style="margin:0;font-size:18px;font-weight:800;color:#fff">${d.front}</p><p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,0.7)">Tocá para descubrir</p></div><span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:24px;color:rgba(255,255,255,0.5)">👆</span></div>
+    </div>`;
+    return `<div class="flip-card" onclick="state['sflip_${i}']=false;render();" style="background:linear-gradient(135deg,${d.color}15,${d.color}08);border:2px solid ${d.color}40;margin-bottom:14px">
+      <div style="animation:fadeSlideUp 0.4s ease"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">${d.emoji}</span><span style="font-size:13px;font-weight:700;color:${d.color};text-transform:uppercase;letter-spacing:1px">${d.front}</span></div><p style="margin:0;font-size:15px;color:#374151;line-height:1.6">${d.back}</p></div>
+    </div>`;
+  }).join('');
+}
+
+function renderSabiasTimeline() {
+  const evts=[{year:'600 a.C.',text:'Primeras monedas en Lidia',emoji:'🪙'},{year:'1776',text:"Adam Smith publica 'La riqueza de las naciones'",emoji:'📕'},{year:'1867',text:"Marx publica 'El Capital'",emoji:'📘'},{year:'1929',text:'Crack de Wall Street',emoji:'📉'},{year:'1936',text:"Keynes publica 'Teoría General'",emoji:'📗'}];
+  let html='<div style="position:relative;padding-left:30px"><div style="position:absolute;left:14px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,#6366F1,#A78BFA,#C4B5FD);border-radius:3px"></div>';
+  evts.forEach((ev,i) => {
+    const act=state.tl_act===i;
+    html += `<div onclick="state.tl_act=${act?'null':i};render();" style="position:relative;padding-left:24px;padding-bottom:20px;cursor:pointer">
+      <div class="timeline-dot" style="background:${act?'#6366F1':'#E0E7FF'};transform:${act?'scale(1.3)':'scale(1)'}"></div>
+      <div style="padding:10px 14px;border-radius:12px;background:${act?'#EEF2FF':'#F9FAFB'};border:${act?'1px solid #C7D2FE':'1px solid transparent'};transition:all 0.3s">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">${ev.emoji}</span><span style="font-size:13px;font-weight:800;color:#6366F1">${ev.year}</span></div>
+        <p style="margin:4px 0 0;font-size:14px;color:#374151;font-weight:${act?600:400}">${ev.text}</p>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderSabiasEncuesta() {
+  const opts=[{text:'La primera moneda era de oro y plata mezclados',emoji:'🪙',votes:47},{text:'La hiperinflación de Zimbabue',emoji:'💸',votes:31},{text:"Smith solo dijo 'mano invisible' 3 veces",emoji:'🤚',votes:22}];
+  const vote=state.enc_vote, show=vote!==undefined;
+  const total=opts.reduce((s,o)=>s+o.votes,0)+(show?1:0);
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">🗳️ ¿Qué dato te sorprendió más?</p><div style="display:flex;flex-direction:column;gap:8px">';
+  opts.forEach((o,i) => {
+    const isV=vote===i, pct=Math.round(((o.votes+(isV?1:0))/total)*100);
+    html += `<div class="encuesta-opt" onclick="if(state.enc_vote===undefined){state.enc_vote=${i};render();}" style="border:${isV?'2px solid #6366F1':'1px solid #E5E7EB'};cursor:${show?'default':'pointer'}">
+      ${show?`<div class="encuesta-bar" style="width:${pct}%;background:${isV?'#EEF2FF':'#F3F4F6'}"></div>`:''}
+      <div style="position:relative;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">${o.emoji}</span><span style="font-size:13px;font-weight:${isV?700:500};color:#1F2937">${o.text}</span></div>
+        ${show?`<span style="font-size:13px;font-weight:700;color:#6366F1">${pct}%</span>`:''}
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  if(show) html += `<p style="text-align:center;margin-top:10px;font-size:12px;color:#9CA3AF">${total} votos en total</p>`;
+  return html;
+}
+
+// ============ INIT ============
+render();
+</script>
+</body>
+</html>

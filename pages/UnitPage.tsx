@@ -5,7 +5,7 @@ import ProgressBar from "../components/ProgressBar";
 
 interface UnitPageProps {
   unit: Unit;
-  progress: ProgressRecord[];              // progreso YA filtrado (idealmente por user + unit)
+  progress: ProgressRecord[]; // progreso YA filtrado (idealmente por user + unit)
   onUpdateProgress: (blockId: string) => void;
   onBack: () => void;
 }
@@ -27,7 +27,12 @@ const UnitPage: React.FC<UnitPageProps> = ({ unit, progress, onUpdateProgress, o
   const visitedSet = useMemo(() => {
     return new Set(
       (progress || [])
-        .filter((p: any) => Boolean((p as any).visited) || (p as any).status === "visited" || (p as any).status === "completed")
+        .filter(
+          (p: any) =>
+            Boolean((p as any).visited) ||
+            (p as any).status === "visited" ||
+            (p as any).status === "completed"
+        )
         .map((p: any) => String((p as any).block_id))
     );
   }, [progress]);
@@ -158,15 +163,17 @@ const UnitPage: React.FC<UnitPageProps> = ({ unit, progress, onUpdateProgress, o
               Unidad {unit.number}: {unit.title}
             </h1>
 
-            {unit.metadata?.updated_at && (
+            {(unit as any)?.metadata?.updated_at && (
               <div className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/55">
-                Actualizada el {formatDate(unit.metadata.updated_at)}{" "}
-                <span className="text-white/25 mx-1">/</span> v{unit.metadata?.version || "1.0.0"}
+                Actualizada el {formatDate((unit as any).metadata.updated_at)}{" "}
+                <span className="text-white/25 mx-1">/</span> v{(unit as any)?.metadata?.version || "1.0.0"}
               </div>
             )}
 
-            {unit.description && (
-              <p className="text-lg text-white/70 serif italic mt-4 leading-relaxed">{unit.description}</p>
+            {(unit as any)?.description && (
+              <p className="text-lg text-white/70 serif italic mt-4 leading-relaxed">
+                {(unit as any).description}
+              </p>
             )}
 
             {/* Tip pedagógico */}

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Cuaderno Vivo — Parte 3</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'DM Sans',sans-serif;}
+body{min-height:100vh;background:linear-gradient(180deg,#F8FAFC 0%,#FFF7ED 50%,#EEF2FF 100%);padding:20px 16px;}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(-120px) translateX(30px) rotate(360deg);}}
+.header{text-align:center;margin-bottom:28px;}
+.header h1{margin:0;font-size:26px;font-weight:800;background:linear-gradient(135deg,#14B8A6,#6366F1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Space Grotesk',sans-serif;letter-spacing:-1px;}
+.tabs{display:flex;gap:6px;margin-bottom:24px;justify-content:center;flex-wrap:wrap;}
+.tab{padding:9px 16px;border-radius:14px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif;}
+.tab.active{color:#fff;transform:scale(1.05);}
+.tab:not(.active){background:#fff;color:#6B7280;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+.content{max-width:600px;margin:0 auto;}
+.section-header{padding:28px 32px;border-radius:20px 20px 0 0;position:relative;overflow:hidden;}
+.section-header .bg-icon{position:absolute;top:-30px;right:-20px;font-size:100px;opacity:0.1;transform:rotate(12deg);}
+.section-header .label{font-size:14px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.section-header h2{margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.section-header p{margin:6px 0 0;font-size:14px;color:rgba(255,255,255,0.8);}
+.section-body{padding:20px;background:#fff;border-radius:0 0 20px 20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);}
+.activity{background:#fff;border-radius:16px;border:1px solid #E5E7EB;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.activity-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.2s;}
+.activity-header h4{margin:0;font-size:16px;font-weight:700;color:#1F2937;}
+.activity-header p{margin:4px 0 0;font-size:13px;color:#6B7280;}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.5px;}
+.arrow{transition:transform 0.3s;font-size:18px;color:#9CA3AF;}.arrow.open{transform:rotate(180deg);}
+.activity-content{padding:20px;border-top:1px solid #F3F4F6;animation:fadeSlideUp 0.3s ease;}
+.btn-primary{display:block;margin:14px auto 0;padding:10px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.btn-primary:disabled{background:#D1D5DB;cursor:not-allowed;box-shadow:none;}
+textarea{width:100%;padding:12px 14px;border-radius:10px;border:2px solid #E5E7EB;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;resize:vertical;min-height:65px;line-height:1.5;transition:border-color 0.3s;}
+textarea:focus{border-color:#C7D2FE;}
+input[type="text"]{width:100%;padding:10px 14px;border-radius:10px;border:2px solid #E5E7EB;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;transition:all 0.3s;}
+.footer-note{margin-top:28px;padding:20px 24px;border-radius:16px;background:#F9FAFB;border:1px dashed #D1D5DB;text-align:center;font-size:13px;color:#6B7280;}
+.progress-bar{height:6px;border-radius:6px;background:#E5E7EB;overflow:hidden;}
+.progress-fill{height:100%;border-radius:6px;transition:width 0.5s ease;}
+.feedback{margin-top:12px;padding:12px 16px;border-radius:12px;animation:fadeSlideUp 0.3s ease;}
+.confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden;}
+.confetti-piece{position:absolute;top:-20px;animation:confettiFall 1.2s ease-out forwards;opacity:0;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:8px">
+    <span style="font-size:32px">📓</span><h1>Campus Cuaderno Vivo</h1>
+  </div>
+  <p style="font-size:14px;color:#6B7280;font-weight:500">Catálogo de Actividades — Parte 3</p>
+</div>
+<div class="tabs">
+  <button class="tab active" id="tab0" onclick="switchTab(0)" style="background:linear-gradient(135deg,#14B8A6,#0D9488);box-shadow:0 4px 15px rgba(20,184,166,0.4)">🔀 CRUCES</button>
+  <button class="tab" id="tab1" onclick="switchTab(1)">🫶 EMOCIONAL</button>
+  <button class="tab" id="tab2" onclick="switchTab(2)">📝 AUTOTEST</button>
+  <button class="tab" id="tab3" onclick="switchTab(3)">🔚 CIERRE</button>
+</div>
+<div class="content" id="mainContent"></div>
+<div class="footer-note">💡 <strong>¡Catálogo completo!</strong> Las 10 secciones de Campus Cuaderno Vivo tienen sus actividades reutilizables listas.</div>
+<div id="confettiBox"></div>
+<script>
+let currentTab=0;
+const tabColors=[
+  {gradient:"linear-gradient(135deg,#14B8A6,#0D9488)",shadow:"0 4px 15px rgba(20,184,166,0.4)"},
+  {gradient:"linear-gradient(135deg,#EC4899,#DB2777)",shadow:"0 4px 15px rgba(236,72,153,0.4)"},
+  {gradient:"linear-gradient(135deg,#F59E0B,#D97706)",shadow:"0 4px 15px rgba(245,158,11,0.4)"},
+  {gradient:"linear-gradient(135deg,#6366F1,#4F46E5)",shadow:"0 4px 15px rgba(99,102,241,0.4)"}
+];
+const state={};
+function switchTab(idx){currentTab=idx;document.querySelectorAll('.tab').forEach((t,i)=>{if(i===idx){t.classList.add('active');t.style.background=tabColors[i].gradient;t.style.boxShadow=tabColors[i].shadow;t.style.color='#fff';}else{t.classList.remove('active');t.style.background='#fff';t.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';t.style.color='#6B7280';}});render();}
+function render(){const c=document.getElementById('mainContent');if(currentTab===0)c.innerHTML=renderCruces();else if(currentTab===1)c.innerHTML=renderEmocional();else if(currentTab===2)c.innerHTML=renderAutotest();else c.innerHTML=renderCierre();}
+function toggleActivity(id){state['open_'+id]=!state['open_'+id];render();}
+function sectionHeader(icon,title,subtitle,gradient){return`<div class="section-header" style="background:${gradient}"><div class="bg-icon">${icon}</div><div class="label">Sección</div><h2>${icon} ${title}</h2><p>${subtitle}</p></div>`;}
+function activityWrap(id,title,desc,level,color,content,defaultOpen){const isOpen=state['open_'+id]!==undefined?state['open_'+id]:(defaultOpen||false);return`<div class="activity"><div class="activity-header" onclick="toggleActivity('${id}')" style="border-left:4px solid ${color};${isOpen?'background:'+color+'08':''}"><div><h4>${title}</h4><p>${desc}</p></div><div style="display:flex;align-items:center;gap:10px"><span class="badge" style="background:${color}18;color:${color}">🧠 ${level}</span><span class="arrow ${isOpen?'open':''}">▼</span></div></div>${isOpen?'<div class="activity-content">'+content+'</div>':''}</div>`;}
+function fireConfetti(){const box=document.getElementById('confettiBox');box.innerHTML='';const colors=['#FF6B6B','#4ECDC4','#FFE66D','#A78BFA','#F472B6','#34D399'];for(let i=0;i<30;i++){const p=document.createElement('div');p.className='confetti-piece';p.style.left=Math.random()*100+'%';p.style.width=(4+Math.random()*6)+'px';p.style.height=p.style.width;p.style.background=colors[Math.floor(Math.random()*colors.length)];p.style.borderRadius=Math.random()>0.5?'50%':'1px';p.style.animationDelay=Math.random()*0.3+'s';box.appendChild(p);}setTimeout(()=>box.innerHTML='',1500);}
+
+// ===== CRUCES =====
+function renderCruces(){
+  return sectionHeader('🔀','CRUCES','Conexión con otras materias y unidades (opcional)','linear-gradient(135deg,#14B8A6,#0D9488)')
+    +'<div class="section-body">'
+    +activityWrap('c1','🌉 Puentes Interdisciplinarios','Descubrí cómo se conecta con otras materias','Conectar','#14B8A6',renderC1Puentes(),true)
+    +activityWrap('c2','🕸️ Telaraña de Conexiones','Explorá las relaciones de la economía con otras ciencias','Relacionar','#8B5CF6',renderC2Telarana())
+    +'</div>';
+}
+function renderC1Puentes(){
+  const puentes=[{materia:'Historia',emoji:'📜',color:'#F59E0B',conexion:'El mercantilismo y la colonización de América',pregunta:'¿Cómo influyó el pensamiento económico en la conquista y explotación de recursos?',vinculo:'Unidad 2 de Historia: Expansión europea'},{materia:'Geografía',emoji:'🌍',color:'#10B981',conexion:'Distribución desigual de recursos naturales',pregunta:'¿Por qué algunos países tienen más recursos y otros menos? ¿Eso define su economía?',vinculo:'Unidad 1 de Geografía: Espacios y recursos'},{materia:'Filosofía',emoji:'💭',color:'#8B5CF6',conexion:'Ética y justicia distributiva',pregunta:'¿Es justo que el mercado decida quién accede a los bienes? ¿Hay alternativas?',vinculo:'Unidad 3 de Filosofía: Ética y moral'},{materia:'Matemática',emoji:'📐',color:'#3B82F6',conexion:'Gráficos de oferta y demanda, porcentajes',pregunta:'¿Cómo se calculan los índices económicos como la inflación?',vinculo:'Unidad 4 de Matemática: Funciones y gráficos'}];
+  if(!state.c1) state.c1={active:null,ref:''};
+  const s=state.c1;
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">Esta unidad se conecta con otras materias:</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Tocá cada materia para explorar la conexión</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
+  puentes.forEach((p,i)=>{
+    const isAct=s.active===i;
+    html+=`<div onclick="state.c1.active=${isAct?'null':i};render();" style="padding:14px;border-radius:14px;border:2px solid ${isAct?p.color:'#E5E7EB'};background:${isAct?p.color+'08':'#fff'};cursor:pointer;transition:all 0.3s;transform:${isAct?'scale(1.03)':'scale(1)'}">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:24px">${p.emoji}</span><span style="font-size:14px;font-weight:700;color:${isAct?p.color:'#374151'}">${p.materia}</span></div>
+      ${isAct?`<div style="margin-top:8px;animation:fadeSlideUp 0.3s ease"><p style="margin:0;font-size:13px;font-weight:600;color:${p.color}">${p.conexion}</p><p style="margin:6px 0;font-size:12px;color:#6B7280;font-style:italic">${p.pregunta}</p><span style="font-size:11px;color:#9CA3AF;background:#F3F4F6;padding:3px 8px;border-radius:6px">📎 ${p.vinculo}</span></div>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  if(s.active!==null) html+=`<div style="animation:fadeSlideUp 0.3s ease"><p style="font-size:13px;font-weight:600;color:#374151;margin:0 0 8px">💡 ¿Qué otra conexión se te ocurre?</p><textarea oninput="state.c1.ref=this.value;" placeholder="Escribí una conexión que vos descubras entre esta unidad y otra materia o tema..." style="border-color:#E0E7FF">${s.ref}</textarea></div>`;
+  return html;
+}
+function renderC2Telarana(){
+  const conexiones=[{id:1,target:'Derecho',desc:'Leyes que regulan el mercado, propiedad privada, contratos',emoji:'⚖️',color:'#EF4444'},{id:2,target:'Sociología',desc:'Clases sociales, desigualdad, consumo y cultura',emoji:'👥',color:'#8B5CF6'},{id:3,target:'Política',desc:'Políticas públicas, presupuesto, impuestos',emoji:'🏛️',color:'#3B82F6'},{id:4,target:'Psicología',desc:'Comportamiento del consumidor, toma de decisiones',emoji:'🧠',color:'#EC4899'},{id:5,target:'Ecología',desc:'Economía sustentable, recursos no renovables',emoji:'🌱',color:'#10B981'},{id:6,target:'Tecnología',desc:'Innovación, automatización, economía digital',emoji:'💻',color:'#F59E0B'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">La economía se conecta con TODO. Descubrí las relaciones:</p>';
+  html+='<div style="display:flex;justify-content:center;margin-bottom:16px"><div style="padding:14px 22px;border-radius:20px;background:linear-gradient(135deg,#6366F1,#8B5CF6);box-shadow:0 4px 20px rgba(99,102,241,0.3)"><span style="font-size:22px">💰</span><span style="font-size:15px;font-weight:800;color:#fff;margin-left:8px">Economía</span></div></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
+  const revCount=conexiones.filter(c=>state['c2_'+c.id]).length;
+  conexiones.forEach(c=>{
+    const isRev=state['c2_'+c.id];
+    html+=`<div onclick="state['c2_${c.id}']=!state['c2_${c.id}'];render();" style="padding:12px 10px;border-radius:14px;border:2px solid ${isRev?c.color:'#E5E7EB'};background:${isRev?c.color+'08':'#F9FAFB'};cursor:pointer;transition:all 0.3s;text-align:center;transform:${isRev?'scale(1.05)':'scale(1)'}">
+      <span style="font-size:24px;display:block">${c.emoji}</span>
+      <span style="font-size:12px;font-weight:700;color:${isRev?c.color:'#374151'};display:block;margin-top:4px">${c.target}</span>
+      ${isRev?`<p style="margin:6px 0 0;font-size:11px;color:#6B7280;animation:fadeSlideUp 0.3s ease">${c.desc}</p>`:''}
+    </div>`;
+  });
+  html+=`</div><div style="margin-top:12px;text-align:center"><span style="font-size:12px;color:#9CA3AF">Descubiertas: ${revCount}/${conexiones.length}</span></div>`;
+  return html;
+}
+// ===== EMOCIONAL =====
+function renderEmocional(){
+  return sectionHeader('🫶','EMOCIONAL','Metacognición — ¿Cómo es mi relación con el saber?','linear-gradient(135deg,#EC4899,#DB2777)')
+    +'<div class="section-body">'
+    +activityWrap('e1','🎭 Escala Emocional','La escala metacognitiva: de 😎 a 🫣','Sentir','#EC4899',renderE1Escala(),true)
+    +activityWrap('e2','📔 Diario de Aprendizaje','Reflexioná sobre tu antes, durante y después','Reflexionar','#8B5CF6',renderE2Diario())
+    +activityWrap('e3','📊 Termómetro Antes/Después','Compará tu confianza antes y después de la unidad','Evaluar','#F59E0B',renderE3Termometro())
+    +'</div>';
+}
+function renderE1Escala(){
+  if(!state.e1) state.e1={sel:null,ref:''};
+  const s=state.e1;
+  const escala=[{emoji:'😎',label:'La tengo clara',desc:'Se lo puedo explicar a otra persona',color:'#10B981',bg:'#D1FAE5'},{emoji:'🙂',label:'La entiendo bastante',desc:'Me siento cómodo/a con el tema',color:'#3B82F6',bg:'#DBEAFE'},{emoji:'🤔',label:'Necesito volver a leer',desc:'Hay partes que no me quedan claras',color:'#F59E0B',bg:'#FEF3C7'},{emoji:'😬',label:'Me cuesta',desc:'Entiendo algo pero me confundo',color:'#F97316',bg:'#FFEDD5'},{emoji:'🫣',label:'Profe! No entiendo nada!',desc:'Necesito ayuda con este tema',color:'#EF4444',bg:'#FEE2E2'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">¿Cómo es tu relación con lo que aprendiste?</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Elegí cómo te sentís con el tema de esta unidad</p><div style="display:flex;flex-direction:column;gap:8px">';
+  escala.forEach((e,i)=>{
+    const isSel=s.sel===i;
+    html+=`<div onclick="state.e1.sel=${i};render();" style="padding:14px 18px;border-radius:14px;border:${isSel?'3px solid '+e.color:'2px solid #E5E7EB'};background:${isSel?e.bg:'#fff'};cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:14px;transform:${isSel?'scale(1.02)':'scale(1)'}">
+      <span style="font-size:32px;flex-shrink:0;transition:transform 0.3s;transform:${isSel?'scale(1.2)':'scale(1)'}">${e.emoji}</span>
+      <div><p style="margin:0;font-size:15px;font-weight:700;color:${isSel?e.color:'#1F2937'}">${e.label}</p><p style="margin:2px 0 0;font-size:12px;color:#6B7280">${e.desc}</p></div>
+      ${isSel?'<span style="margin-left:auto;font-size:20px;animation:fadeSlideUp 0.3s ease">✓</span>':''}
+    </div>`;
+  });
+  html+='</div>';
+  if(s.sel!==null){
+    const prompt=s.sel<=1?'🌟 ¡Genial! ¿Qué fue lo que más te ayudó a entender?':s.sel===2?'💡 ¿Qué parte necesitás releer?':'💪 No te preocupes. ¿Qué es lo que más te confunde?';
+    html+=`<div style="margin-top:14px;animation:fadeSlideUp 0.3s ease"><p style="font-size:13px;font-weight:600;color:#374151;margin:0 0 8px">${prompt}</p><textarea oninput="state.e1.ref=this.value;" placeholder="Escribí tu reflexión acá..." style="border-color:${escala[s.sel].color}40">${s.ref}</textarea></div>`;
+  }
+  return html;
+}
+function renderE2Diario(){
+  if(!state.e2) state.e2={antes:'',durante:'',despues:'',sub:false};
+  const s=state.e2;
+  const filled=[s.antes,s.durante,s.despues].filter(v=>v.trim().length>10).length;
+  const moments=[{key:'antes',label:'ANTES de la unidad',emoji:'🚪',color:'#F59E0B',ph:'¿Qué pensaba sobre este tema antes de empezar? ¿Me interesaba? ¿Me daba fiaca?'},{key:'durante',label:'DURANTE la unidad',emoji:'⚛️',color:'#6366F1',ph:'¿Qué me sorprendió? ¿Qué me costó? ¿Qué disfruté?'},{key:'despues',label:'DESPUÉS de la unidad',emoji:'✨',color:'#EC4899',ph:'¿Cambió lo que pensaba? ¿Qué me llevo? ¿Qué quiero saber más?'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">Tu diario de aprendizaje:</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Reflexioná sobre tu proceso en tres momentos</p><div style="display:flex;flex-direction:column;gap:12px">';
+  moments.forEach(m=>{
+    html+=`<div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:18px">${m.emoji}</span><span style="font-size:13px;font-weight:700;color:${m.color}">${m.label}</span></div><textarea oninput="state.e2.${m.key}=this.value;state.e2.sub=false;" placeholder="${m.ph}" style="border-color:${m.color}30">${s[m.key]}</textarea></div>`;
+  });
+  html+='</div>';
+  html+=`<div style="margin-top:14px;display:flex;align-items:center;gap:10px"><div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${(filled/3)*100}%;background:linear-gradient(90deg,#F59E0B,#6366F1,#EC4899)"></div></div><span style="font-size:12px;color:#6B7280;font-weight:600">${filled}/3</span></div>`;
+  html+=`<button class="btn-primary" onclick="state.e2.sub=true;render();" ${filled<1?'disabled':''}>Guardar diario</button>`;
+  if(s.sub) html+=`<div class="feedback" style="background:#D1FAE5;text-align:center"><p style="margin:0;font-size:14px;font-weight:600;color:#065F46">📔 ¡Diario guardado! La reflexión es parte del aprendizaje.</p></div>`;
+  return html;
+}
+function renderE3Termometro(){
+  if(!state.e3) state.e3={antes:50,despues:50,show:false};
+  const s=state.e3;
+  function getLabel(v){return v<20?{text:'😰 Perdido/a',color:'#EF4444'}:v<40?{text:'😬 Inseguro/a',color:'#F97316'}:v<60?{text:'🤔 En proceso',color:'#F59E0B'}:v<80?{text:'🙂 Confiado/a',color:'#3B82F6'}:{text:'😎 Seguro/a',color:'#10B981'};}
+  const la=getLabel(s.antes),ld=getLabel(s.despues),diff=s.despues-s.antes;
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">¿Cómo cambió tu confianza con el tema?</p><div style="display:flex;flex-direction:column;gap:16px">';
+  [{label:'🚪 ANTES de la unidad',color:'#F59E0B',lbl:la,key:'antes'},{label:'✨ DESPUÉS de la unidad',color:'#EC4899',lbl:ld,key:'despues'}].forEach(item=>{
+    html+=`<div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:700;color:${item.color}">${item.label}</span><span style="font-size:14px;font-weight:700;color:${item.lbl.color}">${item.lbl.text}</span></div><div style="position:relative"><div style="height:8px;border-radius:8px;background:linear-gradient(90deg,#EF4444,#F97316,#F59E0B,#3B82F6,#10B981)"></div><input type="range" min="0" max="100" value="${s[item.key]}" oninput="state.e3.${item.key}=Number(this.value);state.e3.show=false;render();" style="width:100%;margin-top:-14px;position:relative;z-index:2;accent-color:${item.lbl.color}"></div></div>`;
+  });
+  html+='</div>';
+  html+=`<button class="btn-primary" onclick="state.e3.show=true;render();">Ver mi progreso</button>`;
+  if(s.show) html+=`<div style="margin-top:12px;padding:14px 18px;border-radius:14px;background:${diff>0?'#D1FAE5':diff===0?'#FEF3C7':'#FEE2E2'};text-align:center;animation:fadeSlideUp 0.3s ease"><p style="margin:0;font-size:16px;font-weight:800;color:${diff>0?'#065F46':diff===0?'#92400E':'#991B1B'}">${diff>20?'🚀 ¡Gran avance!':diff>0?'📈 ¡Mejoraste!':diff===0?'➡️ Mismo nivel':'📉 Necesitás reforzar'}</p><p style="margin:6px 0 0;font-size:13px;color:#6B7280">Antes: ${s.antes}% → Después: ${s.despues}% (${diff>0?'+':''}${diff}%)</p></div>`;
+  return html;
+}
+// ===== AUTOTEST =====
+function renderAutotest(){
+  return sectionHeader('📝','AUTOTEST','Test online con nota automática al instante','linear-gradient(135deg,#F59E0B,#D97706)')
+    +'<div class="section-body">'
+    +activityWrap('at','📝 Test de la Unidad','6 preguntas multiple choice con corrección inmediata','Evaluar','#F59E0B',renderATQuiz(),true)
+    +'</div>';
+}
+function renderATQuiz(){
+  const preguntas=[
+    {q:'¿Cuál es el problema central que estudia la economía?',opts:['La acumulación de dinero','La escasez de recursos frente a necesidades ilimitadas','El comercio internacional','La creación de empresas'],correct:1,explain:'La economía estudia cómo administrar recursos escasos para satisfacer necesidades ilimitadas.'},
+    {q:'¿Quiénes son los agentes económicos?',opts:['Bancos, empresas y gobierno','Familias, empresas y Estado','Trabajadores, desempleados y jubilados','Productores y consumidores únicamente'],correct:1,explain:'Los tres agentes económicos son las familias (consumo), las empresas (producción) y el Estado (regulación).'},
+    {q:'¿Qué promovía el mercantilismo?',opts:['El libre comercio entre naciones','La agricultura como fuente de riqueza','La acumulación de metales preciosos','La intervención mínima del Estado'],correct:2,explain:'El mercantilismo buscaba acumular oro y plata, proteger la industria nacional y exportar más de lo que se importaba.'},
+    {q:'¿Qué escuela económica sostenía que la tierra era la única fuente de riqueza?',opts:['Clasicismo','Marxismo','Mercantilismo','Fisiocracia'],correct:3,explain:'Los fisiócratas (Quesnay) creían que solo la agricultura/naturaleza generaba riqueza real.'},
+    {q:"El 'costo de oportunidad' se refiere a:",opts:['El precio más alto del mercado','Lo que se deja de obtener al elegir una opción','El costo de producir un bien','El margen de ganancia de una empresa'],correct:1,explain:'Cada decisión implica renunciar a la siguiente mejor alternativa: eso es el costo de oportunidad.'},
+    {q:'Adam Smith es conocido por el concepto de:',opts:['Lucha de clases','Mano invisible del mercado','Intervención estatal','Plusvalía'],correct:1,explain:"Smith planteó que el mercado se autorregula como si una 'mano invisible' guiara las decisiones individuales hacia el bien común."}
+  ];
+  if(!state.at) state.at={current:0,answers:{},finished:false};
+  const s=state.at, totalQ=preguntas.length;
+  const score=Object.keys(s.answers).filter(k=>s.answers[k]===preguntas[k].correct).length;
+  const pct=Math.round((score/totalQ)*100);
+  const getNota=()=>pct>=90?{nota:'10',emoji:'🏆',text:'¡EXCELENTE!',color:'#10B981'}:pct>=70?{nota:String(Math.round(pct/10)),emoji:'🎉',text:'¡Muy bien!',color:'#3B82F6'}:pct>=50?{nota:String(Math.round(pct/10)),emoji:'👍',text:'Aprobado, pero podés mejorar',color:'#F59E0B'}:{nota:String(Math.round(pct/10)),emoji:'📚',text:'Necesitás repasar',color:'#EF4444'};
+
+  if(s.finished){
+    const n=getNota();
+    let html=`<div style="text-align:center;padding:20px">
+      <div style="width:100px;height:100px;border-radius:50%;background:${n.color}15;border:4px solid ${n.color};display:flex;align-items:center;justify-content:center;margin:0 auto 16px;flex-direction:column"><span style="font-size:32px;font-weight:900;color:${n.color}">${n.nota}</span></div>
+      <span style="font-size:28px">${n.emoji}</span>
+      <p style="margin:8px 0 4px;font-size:20px;font-weight:800;color:${n.color}">${n.text}</p>
+      <p style="margin:0;font-size:14px;color:#6B7280">${score} de ${totalQ} correctas (${pct}%)</p>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:16px">`;
+    preguntas.forEach((_,i)=>{
+      const ok=s.answers[i]===preguntas[i].correct;
+      html+=`<div style="width:28px;height:28px;border-radius:50%;background:${ok?'#D1FAE5':'#FEE2E2'};border:2px solid ${ok?'#10B981':'#EF4444'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${ok?'#065F46':'#991B1B'}">${i+1}</div>`;
+    });
+    html+=`</div><button class="btn-primary" onclick="state.at={current:0,answers:{},finished:false};render();" style="margin-top:20px">Reintentar</button></div>`;
+    return html;
+  }
+
+  const p=preguntas[s.current], answered=s.answers[s.current]!==undefined, isCorrect=answered&&s.answers[s.current]===p.correct;
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:13px;font-weight:700;color:#6366F1">Pregunta ${s.current+1} de ${totalQ}</span><div style="display:flex;gap:4px">`;
+  preguntas.forEach((_,i)=>{
+    const a=s.answers[i], ok=a!==undefined&&a===preguntas[i].correct, bad=a!==undefined&&a!==preguntas[i].correct;
+    html+=`<div style="width:10px;height:10px;border-radius:50%;background:${i===s.current?'#6366F1':ok?'#10B981':bad?'#EF4444':'#E5E7EB'};transition:all 0.3s"></div>`;
+  });
+  html+=`</div></div><div style="padding:16px 18px;border-radius:14px;background:#F5F3FF;margin-bottom:14px"><p style="margin:0;font-size:15px;font-weight:700;color:#374151">${p.q}</p></div><div style="display:flex;flex-direction:column;gap:8px">`;
+  p.opts.forEach((opt,j)=>{
+    const isSel=s.answers[s.current]===j, isOk=answered&&j===p.correct, isBad=isSel&&!isCorrect;
+    html+=`<div onclick="if(state.at.answers[state.at.current]===undefined){state.at.answers[state.at.current]=${j};render();}" style="padding:12px 16px;border-radius:12px;border:${isOk?'2px solid #10B981':isBad?'2px solid #EF4444':isSel?'2px solid #6366F1':'2px solid #E5E7EB'};background:${isOk?'#ECFDF5':isBad?'#FEF2F2':isSel?'#EEF2FF':'#fff'};cursor:${answered?'default':'pointer'};transition:all 0.25s;display:flex;align-items:center;gap:10px">
+      <span style="width:28px;height:28px;border-radius:50%;border:${isOk?'2px solid #10B981':isBad?'2px solid #EF4444':'2px solid #D1D5DB'};background:${isOk?'#10B981':isBad?'#EF4444':'transparent'};color:${isOk||isBad?'#fff':'#6B7280'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${isOk?'✓':isBad?'✗':String.fromCharCode(65+j)}</span>
+      <span style="font-size:14px;font-weight:${isSel?600:400};color:#1F2937">${opt}</span>
+    </div>`;
+  });
+  html+='</div>';
+  if(answered) html+=`<div style="margin-top:12px;padding:12px 16px;border-radius:12px;background:${isCorrect?'#D1FAE5':'#FEF3C7'};animation:fadeSlideUp 0.3s ease"><p style="margin:0;font-size:13px;color:${isCorrect?'#065F46':'#92400E'}">${isCorrect?'✨ ¡Correcto! ':'📖 '}${p.explain}</p></div>`;
+  if(answered) html+=`<button class="btn-primary" onclick="if(state.at.current<${totalQ-1}){state.at.current++;render();}else{state.at.finished=true;${pct>=70?'fireConfetti();':''}render();}">${s.current<totalQ-1?'Siguiente →':'Ver mi nota'}</button>`;
+  return html;
+}
+// ===== CIERRE =====
+function renderCierre(){
+  return sectionHeader('🔚','CIERRE','Reflexión final, glosario y recursos para profundizar','linear-gradient(135deg,#6366F1,#4F46E5)')
+    +'<div class="section-body">'
+    +activityWrap('ci1','💭 Reflexión Final','¿Qué aprendí? ¿Qué me sorprendió? ¿Cómo lo aplico?','Reflexionar','#6366F1',renderCI1Reflexion(),true)
+    +activityWrap('ci2','📖 Glosario Interactivo','Todos los términos clave con buscador','Consultar','#10B981',renderCI2Glosario())
+    +activityWrap('ci3','🔗 Recursos para Profundizar','Libros, videos, podcasts y webs recomendadas','Explorar','#8B5CF6',renderCI3Recursos())
+    +'</div>';
+}
+function renderCI1Reflexion(){
+  if(!state.ci1) state.ci1={aprendizaje:'',sorpresa:'',aplicacion:'',sub:false};
+  const s=state.ci1;
+  const filled=[s.aprendizaje,s.sorpresa,s.aplicacion].filter(v=>v.trim().length>10).length;
+  const prompts=[{key:'aprendizaje',emoji:'💡',label:'Lo más importante que aprendí',ph:'¿Qué concepto o idea te pareció más valioso?',color:'#6366F1'},{key:'sorpresa',emoji:'😮',label:'Lo que más me sorprendió',ph:'¿Qué dato o idea no esperabas encontrar?',color:'#EC4899'},{key:'aplicacion',emoji:'🌍',label:'Cómo lo conecto con mi vida',ph:'¿En qué situación real podrías aplicar lo que aprendiste?',color:'#10B981'}];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 14px">Antes de cerrar, reflexioná sobre lo que te dejó esta unidad:</p><div style="display:flex;flex-direction:column;gap:12px">';
+  prompts.forEach(p=>{
+    html+=`<div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:18px">${p.emoji}</span><span style="font-size:13px;font-weight:700;color:${p.color}">${p.label}</span></div><textarea oninput="state.ci1.${p.key}=this.value;state.ci1.sub=false;" placeholder="${p.ph}" style="border-color:${p.color}30;min-height:60px">${s[p.key]}</textarea></div>`;
+  });
+  html+='</div>';
+  html+=`<button class="btn-primary" onclick="state.ci1.sub=true;render();" ${filled<1?'disabled':''}>Guardar reflexión</button>`;
+  if(s.sub) html+=`<div class="feedback" style="background:#D1FAE5;text-align:center"><p style="margin:0;font-size:14px;font-weight:600;color:#065F46">🌟 ¡Reflexión guardada! Cada unidad te deja algo nuevo.</p></div>`;
+  return html;
+}
+function renderCI2Glosario(){
+  if(!state.ci2) state.ci2={search:'',expanded:null};
+  const s=state.ci2;
+  const terms=[
+    {term:'Economía',def:'Ciencia que estudia la administración de recursos escasos para satisfacer necesidades ilimitadas.',emoji:'💰',cat:'Concepto base'},
+    {term:'Escasez',def:'Situación en la que los recursos disponibles son insuficientes para cubrir todas las necesidades.',emoji:'⚠️',cat:'Concepto base'},
+    {term:'Costo de oportunidad',def:'Valor de la mejor alternativa a la que se renuncia al tomar una decisión económica.',emoji:'🔀',cat:'Concepto base'},
+    {term:'Mercantilismo',def:'Doctrina económica (s. XVI-XVIII) que buscaba acumular metales preciosos y favorecer las exportaciones.',emoji:'👑',cat:'Historia'},
+    {term:'Fisiocracia',def:'Escuela que consideraba a la agricultura y la naturaleza como únicas fuentes de riqueza.',emoji:'🌾',cat:'Historia'},
+    {term:'Adam Smith',def:"Economista escocés (1723-1790), considerado padre de la economía moderna. Autor de 'La riqueza de las naciones'.",emoji:'📕',cat:'Pensadores'},
+    {term:'Oferta y demanda',def:'Mecanismo de mercado que determina precios según la cantidad disponible y la cantidad deseada de un bien.',emoji:'📊',cat:'Mercado'},
+    {term:'PBI',def:'Producto Bruto Interno: valor total de bienes y servicios producidos en un país en un período determinado.',emoji:'📈',cat:'Indicadores'}
+  ];
+  const filtered=terms.filter(t=>t.term.toLowerCase().includes(s.search.toLowerCase())||t.def.toLowerCase().includes(s.search.toLowerCase()));
+  const cats=[...new Set(terms.map(t=>t.cat))];
+  let html=`<div style="position:relative;margin-bottom:14px"><input type="text" value="${s.search}" oninput="state.ci2.search=this.value;state.ci2.expanded=null;render();" placeholder="🔍 Buscar en el glosario..." style="padding:12px 16px">${s.search?`<button onclick="state.ci2.search='';state.ci2.expanded=null;render();" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:16px;cursor:pointer;color:#9CA3AF">✕</button>`:''}</div>`;
+  html+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
+  cats.forEach(c=>html+=`<span style="padding:4px 10px;border-radius:8px;background:#F3F4F6;font-size:11px;font-weight:600;color:#6B7280">${c}</span>`);
+  html+='</div><div style="display:flex;flex-direction:column;gap:6px">';
+  filtered.forEach((t,i)=>{
+    const isExp=s.expanded===i;
+    html+=`<div onclick="state.ci2.expanded=${isExp?'null':i};render();" style="padding:10px 14px;border-radius:12px;border:${isExp?'2px solid #6366F1':'1px solid #E5E7EB'};background:${isExp?'#F5F3FF':'#fff'};cursor:pointer;transition:all 0.3s">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">${t.emoji}</span><span style="font-size:14px;font-weight:700;color:#1F2937">${t.term}</span></div>
+        <span style="font-size:10px;color:#9CA3AF;background:#F3F4F6;padding:2px 8px;border-radius:6px">${t.cat}</span>
+      </div>
+      ${isExp?`<p style="margin:8px 0 0;font-size:13px;color:#374151;line-height:1.5;animation:fadeSlideUp 0.3s ease">${t.def}</p>`:''}
+    </div>`;
+  });
+  html+=`</div><p style="text-align:center;margin-top:10px;font-size:12px;color:#9CA3AF">${filtered.length} de ${terms.length} términos</p>`;
+  return html;
+}
+function renderCI3Recursos(){
+  const recursos=[
+    {tipo:'📖 Libro',title:"'La riqueza de las naciones' - Adam Smith",desc:'El clásico fundacional de la economía moderna. Se puede leer un resumen online.',nivel:'Avanzado',color:'#8B5CF6'},
+    {tipo:'🎬 Video',title:'Economía desde cero - Canal Encuentro',desc:'Serie de videos cortos que explican conceptos básicos de economía con ejemplos argentinos.',nivel:'Introductorio',color:'#EF4444'},
+    {tipo:'🎧 Podcast',title:"'Economía para todos' - Radio Nacional",desc:'Episodios cortos que conectan la economía con la vida cotidiana.',nivel:'Intermedio',color:'#F59E0B'},
+    {tipo:'🌐 Web',title:'Banco Central de la República Argentina',desc:'Datos económicos actualizados, informes y material educativo.',nivel:'Intermedio',color:'#3B82F6'},
+    {tipo:'📄 Artículo',title:"'¿Qué es la inflación?' - INDEC",desc:'Explicación oficial sobre cómo se mide la inflación en Argentina.',nivel:'Introductorio',color:'#10B981'}
+  ];
+  let html='<p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 6px">¿Querés saber más? Estos recursos te pueden interesar:</p><p style="font-size:12px;color:#9CA3AF;margin:0 0 14px">Guardá los que te interesen con ⭐</p><div style="display:flex;flex-direction:column;gap:8px">';
+  recursos.forEach((r,i)=>{
+    const isSaved=state['ci3_'+i];
+    html+=`<div style="padding:12px 16px;border-radius:12px;border:${isSaved?'2px solid '+r.color:'1px solid #E5E7EB'};background:${isSaved?r.color+'05':'#fff'};transition:all 0.3s">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:${r.color}">${r.tipo}</span><span style="font-size:10px;color:#9CA3AF;background:#F3F4F6;padding:2px 6px;border-radius:4px">${r.nivel}</span></div>
+          <p style="margin:0;font-size:14px;font-weight:600;color:#1F2937">${r.title}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#6B7280">${r.desc}</p>
+        </div>
+        <button onclick="state['ci3_${i}']=!state['ci3_${i}'];render();" style="background:none;border:none;font-size:22px;cursor:pointer;flex-shrink:0;margin-left:10px;transform:${isSaved?'scale(1.2)':'scale(1)'};transition:transform 0.2s">${isSaved?'⭐':'☆'}</button>
+      </div>
+    </div>`;
+  });
+  html+=`</div><div style="margin-top:12px;text-align:center"><span style="font-size:12px;color:#6B7280">⭐ Guardados: ${[0,1,2,3,4].filter(i=>state['ci3_'+i]).length}/${recursos.length}</span></div>`;
+  return html;
+}
+
+// ===== INIT =====
+render();
+</script>
+</body>
+</html>
